@@ -75,7 +75,7 @@ Reaching the raw accuracy of a $32$-site ring would take an open chain of roughl
 The benchmark survives this for two reasons, and it is worth being clear that the extrapolation is doing the work, not the raw data.
 First, the $1/L$ form is known in advance, so the surface term can be fitted out rather than waited out.
 Second, open boundaries are cheap enough to reach $L=128$ at $D=300$, where a ring needs $D=600$ to manage $L=32$ — so the fit has a long, clean lever arm to work with.
-The extrapolated bulk values end up comparable either way ($4.9\times10^{-6}$ open, $3.1\times10^{-6}$ ring), but only because the open chain compensates in length for what it gives up in convergence order.
+The extrapolated bulk values end up comparable either way ($4.9\times10^{-6}$ open, $3.1\times10^{-6}$ ring), but only because the open chain compensates in length for what it gives up in convergence order — and, as [the last section](#how-much-the-surface-term-really-costs) shows, only because the correct fit form was known going in.
 
 ## Parameters
 
@@ -199,6 +199,40 @@ $$
 
 The bulk energy is recovered to six digits from data whose raw finite-size error is four orders of magnitude larger.
 The residual is not DMRG truncation error — at $L=16$ the energy matched exact diagonalization to $4\times10^{-15}$ — but the logarithmic corrections peculiar to the isotropic point, which decay more slowly than any power and make $\Delta=1$ the hardest place on the XXZ line to extrapolate.
+
+## How much the surface term really costs
+
+The extrapolated answer above is about as accurate as one obtained from rings, which invites the wrong conclusion — that the boundary term is bookkeeping.
+It is not, but the cost is not where one might first look.
+
+**It is not in the stability of the fit.**
+Refitting over every choice of lengths, the extrapolated bulk value moves by:
+
+| | spread in $a$ across fit windows |
+|---|---|
+| open chain, $a + b/L + c/L^2$, all 3-point windows | $1.70\times10^{-4}$ |
+| ring, $a + b/L^2$, all 2-point windows | $1.45\times10^{-4}$ |
+
+Essentially the same. Having a surface term to fit does not make the fit noticeably more fragile against which lengths you feed it.
+
+**It is in the consequence of getting the fit form wrong.**
+The two geometries are not equally forgiving:
+
+| Data | Fit form used | Extrapolated $a$ | Error |
+|---|---|---|---|
+| open | $a + b/L + c/L^2$ (correct) | $-0.4431521$ | $4.9\times10^{-6}$ |
+| open | $a + b/L^2$ (surface term omitted) | $-0.4473748$ | $4.2\times10^{-3}$ |
+| ring | $a + b/L^2$ (correct) | $-0.4431440$ | $3.1\times10^{-6}$ |
+| ring | $a + b/L + c/L^2$ (spurious surface term) | $-0.4431593$ | $1.2\times10^{-5}$ |
+
+Omitting a surface term that is really there costs a factor of $850$.
+Including one that is not there costs a factor of $4$.
+
+That asymmetry is the real price of open boundaries.
+On a ring, translational symmetry *guarantees* there is no surface contribution — the leading correction is the conformal $1/L^2$ and you cannot get the form wrong.
+On an open chain the correct form is something you must know in advance and put in by hand.
+Here we knew it, because we knew the answer we were extrapolating toward and could check.
+In a calculation where the answer is not known ahead of time — which is the only kind worth doing — that assurance is absent, and the $4.2\times10^{-3}$ column is the size of the mistake available to anyone who assumes the conformal form without asking whether the geometry has a surface.
 
 ## Summary and outlook
 
