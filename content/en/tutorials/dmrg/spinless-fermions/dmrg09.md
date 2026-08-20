@@ -1,6 +1,6 @@
 ---
 title: DMRG-09 Ground State Energy and the Bethe Ansatz
-weight: 3
+weight: 4
 math: true
 toc: true
 ---

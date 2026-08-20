@@ -1,6 +1,6 @@
 ---
 title: DMRG-08 Free Theory
-weight: 2
+weight: 3
 math: true
 toc: true
 ---
