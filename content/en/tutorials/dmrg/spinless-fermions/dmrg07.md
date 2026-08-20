@@ -9,7 +9,7 @@ In this tutorial series we revisit the Heisenberg chain we saw in the previous m
 
 ---
 
-## 1. The XXZ Hamiltonian
+## The XXZ Hamiltonian
 
 The starting point is the anisotropic Heisenberg (XXZ) chain with nearest-neighbor coupling $J$ and anisotropy $\Delta$:
 
@@ -44,7 +44,7 @@ Read physically: the first term **moves** a flipped spin from site $j+1$ to site
 
 ---
 
-## 2. Commutation and anticommutation relations
+## Commutation and anticommutation relations
 To fully justify the above analogies we will need to dive into the commutation and anti-commutation relations of our spin operators. As we all know, the spin algebra is given by:
 
 $$
@@ -53,14 +53,14 @@ $$
 
 The $\delta_{nm}$ is the crucial structural fact: **spins on different sites commute.** They are *distinguishable local degrees of freedom*.
 
-For spin-$\tfrac{1}{2}$ specifically there is *also* an anticommutator identity, which holds only on a single site:
+For spin-$\tfrac{1}{2}$ the anticommutator on any two sites is:
 
 $$
-\big\{\hat S^a_n,\, \hat S^b_n\big\} \;=\; \tfrac{1}{2}\,\delta_{ab}\,\hat{\mathbb 1},
-\qquad\text{in particular}\quad \big(\hat S^a_n\big)^2 = \tfrac{1}{4}\hat{\mathbb 1}.
+\big\{\hat S^a_n,\, \hat S^b_m\big\} \;=\; \tfrac{1}{2}\,\delta_{nm}\,\delta_{ab}\,\hat{\mathbb 1}
+\;+\; 2\,\big(1-\delta_{nm}\big)\,\hat S^a_n \hat S^b_m ,
 $$
 
-(For $n \neq m$ the anticommutator is not special: $\{\hat S^a_n,\hat S^b_m\} = 2\hat S^a_n\hat S^b_m$, since they commute.)
+so in particular $\big(\hat S^a_n\big)^2 = \tfrac{1}{4}\hat{\mathbb 1}$.
 
 From the algebra above we can find the algebra of our ladder operators:
 
@@ -82,7 +82,7 @@ $$
 \big\{\hat S^{\pm}_i,\, \hat S^{\pm}_i\big\} = 2\big(\hat S^{\pm}_i\big)^2 = 0 .
 $$
 
-The second line is a **hard-core / exclusion condition**: you cannot raise a spin-$\tfrac12$ twice. Comparing this with the fermionic algebra we want,
+The second line is a **hard-core / exclusion condition**: you cannot raise a spin-$\tfrac12$ twice. Comparing this with the fermionic algebra we want:
 
 $$
 \big\{\hat c_i,\, \hat c^{\dagger}_j\big\} = \delta_{ij},
@@ -103,7 +103,7 @@ First, let's make the mapping between the state space clear to finish our motiva
 
 ---
 
-## 3. Mapping states: spin configurations $\to$ occupation numbers
+## Mapping states: spin configurations $\to$ occupation numbers
 
 Following the above analysis, we can identify the two local states with an empty and an occupied orbital:
 
@@ -112,7 +112,7 @@ $$
 \lvert \uparrow \rangle_j \;\longmapsto\; \lvert 1 \rangle_j .
 $$
 
-That is, "down spin" $=$ empty site, "up spin" $=$ one particle. Because a site can hold either $0$ or $1$ particle and never $2$, the particles are automatically subject to a Pauli-type exclusion — which is the state-space version of $(\hat S^+)^2 = 0$ from §2. As described above, we can also see:
+That is, "down spin" $=$ empty site, "up spin" $=$ one particle. Because a site can hold either $0$ or $1$ particle and never $2$, the particles are automatically subject to a Pauli-type exclusion — which is the state-space version of $(\hat S^+)^2 = 0$ found above. As described above, we can also see:
 
 $$
 \boxed{\;\hat S^z_j \;=\; \hat n_j - \tfrac{1}{2} \;=\; \hat c^\dagger_j \hat c_j - \tfrac{1}{2}\;}
@@ -128,7 +128,7 @@ Zero magnetization $\Leftrightarrow$ half filling.
 
 ---
 
-## 4. The Jordan–Wigner transformation
+## The Jordan–Wigner transformation
 
 We will now cover the Jordan–Wigner transformation, skipping most of the algebraic details. This is a good exercise, but will not be too important for our purposes.
 
@@ -169,9 +169,9 @@ $$
 
 So $\hat c_j$ is *not* just a local spin flip: it is "flip the spin at $j$, and multiply by $(-1)$ for every up-spin to the left of $j$." Note that $\hat S^z_j$ needs no string — it is diagonal, and does not exchange anything.
 
-### 4.1 Why the string does the job
+### Why the string does the job
 
-Most of the algebra is skipped here; instead we point out some key facts. The one identity that carries all the weight: on a single site, the parity operator **anticommutes** with the spin flip,
+Most of the algebra is skipped here; instead we point out some key facts. The one identity that carries all the weight: on a single site, the parity operator **anticommutes** with the spin flip:
 
 $$
 \big\{\hat S^z_i,\, \hat S^{\pm}_i\big\} = 0
@@ -185,7 +185,7 @@ $$
 \big\{\hat c_i,\, \hat c^\dagger_j\big\} = 0 \qquad (i \neq j) . \quad\checkmark
 $$
 
-The same argument gives $\{\hat c_i,\hat c_j\} = 0$, and on-site the algebra of §2 already gave $\{\hat c_i,\hat c^\dagger_i\} = \{\hat S^-_i,\hat S^+_i\} = \hat{\mathbb 1}$. So altogether:
+The same argument gives $\{\hat c_i,\hat c_j\} = 0$, and on-site the single-site algebra already gave $\{\hat c_i,\hat c^\dagger_i\} = \{\hat S^-_i,\hat S^+_i\} = \hat{\mathbb 1}$. So altogether:
 
 $$
 \big\{\hat c_i,\hat c^\dagger_j\big\} = \delta_{ij}, \qquad
@@ -198,9 +198,9 @@ $$
 
 ---
 
-## 5. Mapping the Hamiltonian
+## Mapping the Hamiltonian
 
-### 5.1 Hopping term: the strings cancel
+### Hopping term: the strings cancel
 
 Again, most of the algebraic steps are skipped here. We focus on the nearest-neighbor bond $\hat S^+_j \hat S^-_{j+1}$ and substitute:
 
@@ -220,15 +220,15 @@ $$
 
 This is why Jordan–Wigner is *useful* rather than merely correct: for **nearest-neighbor** terms the non-local strings cancel between the two sites, and a manifestly non-local transformation produces a manifestly local Hamiltonian. (For longer-range hopping $\hat S^+_i\hat S^-_j$ with $|i-j|>1$ the string does **not** cancel — a residual $\prod_{i<l<j}e^{i\pi\hat n_l}$ survives.)
 
-### 5.2 Interaction term
+### Interaction term
 
-This one is immediate from §3:
+This one is immediate from the identification $\hat S^z_j = \hat n_j - \tfrac{1}{2}$:
 
 $$
 \Delta\,\hat S^z_j \hat S^z_{j+1} = \Delta\left(\hat n_j - \tfrac{1}{2}\right)\left(\hat n_{j+1} - \tfrac{1}{2}\right).
 $$
 
-### 5.3 The spinless-fermion Hamiltonian
+### The spinless-fermion Hamiltonian
 
 $$
 \boxed{\;
@@ -253,7 +253,7 @@ So the XXZ chain **is** a chain of spinless fermions hopping with amplitude $J/2
 
 ---
 
-## 6. $U(1)$ symmetry and particle-number sectors
+## $U(1)$ symmetry and particle-number sectors
 
 The original Hamiltonian conserves total magnetization:
 
@@ -267,7 +267,7 @@ $$
 \boxed{\;\big[\hat H,\, \hat N\big] = 0, \qquad \hat N = \sum_{j} \hat c^\dagger_j \hat c_j \;}
 $$
 
-The associated symmetry is the global $U(1)$ phase rotation
+The associated symmetry is the global $U(1)$ phase rotation:
 
 $$
 \hat c_j \;\longmapsto\; e^{i\theta}\, \hat c_j , \qquad
@@ -276,7 +276,7 @@ $$
 
 under which every term of $\hat H$ (one $\hat c^\dagger$ per $\hat c$) is invariant. Generated by $\hat N$: $\hat U(\theta) = e^{i\theta \hat N}$.
 
-**Consequence.** $\hat H$ is block diagonal in the eigenbasis of $\hat N$. The $2^L$-dimensional Hilbert space decomposes into fixed-particle-number sectors,
+**Consequence.** $\hat H$ is block diagonal in the eigenbasis of $\hat N$. The $2^L$-dimensional Hilbert space decomposes into fixed-particle-number sectors:
 
 $$
 \mathcal{H} = \bigoplus_{N=0}^{L} \mathcal{H}_N , \qquad \dim \mathcal{H}_N = \binom{L}{N}, \qquad \sum_{N=0}^{L}\binom{L}{N} = 2^L ,
