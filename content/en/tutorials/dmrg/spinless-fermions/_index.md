@@ -14,3 +14,5 @@ The series builds on the spin-chain tutorials, so it assumes familiarity with th
 ## Introduction
 
 - [DMRG-07 Introduction](dmrg07) — introduces the spinless-fermion chain and the parameters used throughout this series.
+- [DMRG-08 Free Theory](dmrg08) — computes the ground state energy at the free-fermion point $V=0$, where a closed form is available at finite length.
+- [DMRG-09 Ground State Energy and the Bethe Ansatz](dmrg09) — turns on the interaction at $V=2t$ and extrapolates to the exact Bethe ansatz value.
