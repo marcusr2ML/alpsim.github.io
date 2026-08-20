@@ -1,6 +1,7 @@
 
 ---
 title: DMRG-05 Local Observables
+weight: 5
 math: true
 toc: true
 ---

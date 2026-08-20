@@ -1,6 +1,7 @@
 
 ---
 title: DMRG-02 Heisenberg Spin Chains
+weight: 2
 math: true
 toc: true
 ---
