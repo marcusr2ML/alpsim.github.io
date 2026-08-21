@@ -20,3 +20,4 @@ The series builds on the spin-chain tutorials, so it assumes familiarity with th
 - [DMRG-08 Ground State Energies](dmrg08) — computes ground state energies of the spinless-fermion chain with the `dmrg` application, benchmarked against exact free fermions and the Heisenberg result of DMRG-03.
 - [DMRG-09 Model](dmrg09) — spinless fermions against hardcore bosons: why the two are the same Hamiltonian on an open chain, and why only the boson form is usable with the `dmrg` binary.
 - [DMRG-10 Boundary Conditions](dmrg10) — open against periodic chains: the $1/L$ surface term, the convergence it costs, and the extrapolation that recovers the Bethe ansatz value.
+- [DMRG-11 Particle-Number Sectors](dmrg11) — the fixed-$N$ blocks built by `CONSERVED_QUANTUMNUMBERS="N"`: energies and density profiles of the $N=0$, $1$ and $2$ sectors, checked against closed-form answers.
