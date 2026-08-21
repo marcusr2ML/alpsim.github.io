@@ -1,5 +1,5 @@
 ---
-title: DMRG-07 Simulations
+title: DMRG-08 Ground State Energies
 weight: 2
 math: true
 toc: true
@@ -39,7 +39,7 @@ where $z_j$ is the coordination number of site $j$ ($z=2$ in the bulk, $z=1$ at 
 ### Running fermions in the boson basis
 
 {{< callout type="info" >}}
-On an open chain, all Jordan–Wigner strings cancel in nearest-neighbor terms, so the fermionic $t$–$V$ chain, the XXZ spin chain, and the **hardcore-boson** $t$–$V$ chain have *identical* energy spectra, sector by sector in the particle number $N$. The ALPS model library defines `hardcore boson` with exactly the same parameters (`t`, `V`, `mu#`) and the same conserved quantum number `N` as `spinless fermions`. We run the simulations with `MODEL="hardcore boson"`: the classic `dmrg` application does not treat the fermionic sign bookkeeping of `MODEL="spinless fermions"` reliably (the sweeps fail to converge variationally), and the Jordan–Wigner equivalence guarantees that no generality is lost by working in the boson basis. Exact-diagonalization applications such as `sparsediag` handle `MODEL="spinless fermions"` directly and can be used to verify the equivalence on small chains (see the questions at the end).
+On an open chain, all Jordan–Wigner strings cancel in nearest-neighbor terms, so the fermionic $t$–$V$ chain, the XXZ spin chain, and the **hardcore-boson** $t$–$V$ chain have *identical* energy spectra, sector by sector in the particle number $N$. The ALPS model library defines `hardcore boson` with exactly the same parameters (`t`, `V`, `mu#`) and the same conserved quantum number `N` as `spinless fermions`, so every parameter file below sets `MODEL="hardcore boson"`. This is not just a convenience: the classic `dmrg` application does not treat the fermionic sign bookkeeping of `MODEL="spinless fermions"` reliably. [DMRG-09](../dmrg08) makes the case in full, with the energies and convergence of the two models side by side.
 {{< /callout >}}
 
 ## Choice of method
@@ -72,7 +72,7 @@ This gives us a rare luxury: an interacting-code benchmark with an exact finite-
 
 | Parameter | Meaning | Value |
 |---|---|---|
-| `LATTICE` | built-in open chain, no lattice file required (see the [ALPS lattice library](../../../documentation/intro/latticehowtos)) | `open chain lattice` |
+| `LATTICE` | built-in open chain, no lattice file required (see the [ALPS lattice library](../../../../documentation/intro/latticehowtos)) | `open chain lattice` |
 | `MODEL` | hardcore-boson $t$–$V$ model, Jordan–Wigner equivalent of the spinless-fermion chain | `hardcore boson` |
 | `CONSERVED_QUANTUMNUMBERS` | quantum number held fixed, used to block-diagonalize $H$ | `N` |
 | `N_total` | particle-number sector targeted (half filling) | 16 |
@@ -87,7 +87,7 @@ Note the one structural difference from the spin tutorials: the conserved quantu
 
 ### Lattice
 
-The built-in `open chain lattice` from the [ALPS lattice library](../../../documentation/intro/latticehowtos) is all we need: every site is equivalent ($\mu_j = 0$), and every bond carries the same hopping $t$:
+The built-in `open chain lattice` from the [ALPS lattice library](../../../../documentation/intro/latticehowtos) is all we need: every site is equivalent ($\mu_j = 0$), and every bond carries the same hopping $t$:
 
 ```
       t       t       t                   t       t

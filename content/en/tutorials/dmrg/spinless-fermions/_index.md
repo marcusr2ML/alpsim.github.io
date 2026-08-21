@@ -17,6 +17,6 @@ The series builds on the spin-chain tutorials, so it assumes familiarity with th
 
 ## Simulations
 
-- [DMRG-07 Simulations](dmrg07-simulations) — computes ground state energies of the spinless-fermion chain with the `dmrg` application, benchmarked against exact free fermions and the Heisenberg result of DMRG-03.
-- [DMRG-08 Free Theory](dmrg08) — computes the ground state energy at the free-fermion point $V=0$, where a closed form is available at finite length.
-- [DMRG-09 Ground State Energy and the Bethe Ansatz](dmrg09) — turns on the interaction at $V=2t$ and extrapolates to the exact Bethe ansatz value.
+- [DMRG-08 Ground State Energies](dmrg07-simulations) — computes ground state energies of the spinless-fermion chain with the `dmrg` application, benchmarked against exact free fermions and the Heisenberg result of DMRG-03.
+- [DMRG-09 Model](dmrg08) — spinless fermions against hardcore bosons: why the two are the same Hamiltonian on an open chain, and why only the boson form is usable with the `dmrg` binary.
+- [DMRG-10 Boundary Conditions](dmrg09) — open against periodic chains: the $1/L$ surface term, the convergence it costs, and the extrapolation that recovers the Bethe ansatz value.
