@@ -1,5 +1,5 @@
 ---
-title: DMRG-10 Boundary Conditions
+title: DMRG-9 Boundary Conditions
 weight: 4
 math: true
 toc: true
