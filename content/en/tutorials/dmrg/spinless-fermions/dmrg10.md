@@ -1,5 +1,5 @@
 ---
-title: DMRG-11 Particle-Number Sectors
+title: DMRG-10 Particle-Number Sectors
 weight: 5
 math: true
 toc: true
