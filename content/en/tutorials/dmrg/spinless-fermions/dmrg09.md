@@ -1,197 +1,254 @@
 ---
-title: DMRG-09 Model
+title: DMRG-09 Particle-Number Sectors
 weight: 3
 math: true
 toc: true
 ---
 
-[DMRG-07](../dmrg07) derived the Jordan-Wigner mapping, and [DMRG-08](../dmrg07-simulations) used it to justify running the fermion chain as `MODEL="hardcore boson"`: on an open chain with nearest-neighbor hopping the strings cancel between adjacent sites, so the two models are the same Hamiltonian. That is a physical argument, and it is correct.
+Every parameter file in this series has carried the line `CONSERVED_QUANTUMNUMBERS="N"`, and every one has then pinned a single value of `N_total` and moved on. This module makes the sector itself the variable: the same Hamiltonian, run in three different fixed-$N$ blocks, with the energy and the density profile of each read off side by side.
 
-This module demonstrates it by simulation instead — runs both models through both codes and compares the energies and the convergence. The equivalence appears exactly where the physical argument says it must. What the numbers add is a second finding the argument cannot supply: the legacy `dmrg` binary does not reproduce the fermionic model at all, which turns the substitution from permitted into mandatory.
+The three lowest blocks are chosen deliberately. They are the only ones on the whole ladder whose answers are known in closed form, which turns them from a physics calculation into a calibration: whatever DMRG returns here can be checked against arithmetic rather than against another simulation.
 
-## The two models
+## Phenomena of interest
 
-The spinless fermion chain with nearest-neighbor hopping and nearest-neighbor repulsion is:
+The symmetry behind the blocks was established in [DMRG-07](../dmrg07): $[\hat H, \hat N] = 0$, so the Hilbert space splits as $\mathcal{H} = \bigoplus_N \mathcal{H}_N$ with $\dim\mathcal{H}_N = \binom{L}{N}$, and every eigenstate carries a label $N$. What is new here is the ALPS side of it. Declaring `N` in `CONSERVED_QUANTUMNUMBERS` is what tells the code to build those blocks; `N_total` then selects one. Several `{ N_total=... }` blocks in one parameter file therefore run several independent DMRG calculations whose energies are directly comparable, because they are eigenvalues of one operator.
 
-$$
-H = -t\sum_{i=1}^{L-1}\big(c^\dagger_i c_{i+1} + c^\dagger_{i+1} c_i\big) \;+\; V\sum_{i=1}^{L-1} n_i n_{i+1} \;-\; \mu\sum_{i=1}^{L} n_i ,
-$$
+The step from $N=1$ to $N=2$ is the physical content of this module. It is where a non-interacting problem becomes an interacting one — $V$ couples *pairs* of neighboring sites, so it has nothing to act on below two particles — and both the energy shift and the rearrangement of the density can be measured cleanly, without a thermodynamic-limit extrapolation standing in the way.
 
-with $n_i = c^\dagger_i c_i \in \{0,1\}$.
-This is the built-in `spinless fermions` model of the ALPS model library.
-It is the fermionic image of the anisotropic Heisenberg chain solved by [Lieb, Schultz, and Mattis (1961)](https://doi.org/10.1016/0003-4916(61)90115-4), reached through the transformation of [Jordan and Wigner (1928)](https://doi.org/10.1007/BF01331938); the DMRG algorithm itself is due to [White (1992)](https://doi.org/10.1103/PhysRevLett.69.2863).
+In spin language these are the bottom three rungs of the magnetization ladder: the dictionary of [DMRG-07](../dmrg07) puts $N = 0, 1, 2$ at $S^z_{\text{tot}} = -16, -15, -14$ for $L=32$, so $\langle n_i \rangle$ is the magnon density and the profiles below are magnon wavefunctions. [DMRG-05](../../dmrg05) studied the same ladder from its middle, where the interesting structure is at the chain edges; counted from the bottom, the structure is in the bulk.
 
-The hard-core boson chain is the same expression with $c^\dagger_i \to b^\dagger_i$, where the $b$ commute on different sites but $(b^\dagger_i)^2 = 0$ still admits at most one particle per site.
-This is the built-in `hardcore boson` model, and it takes the same parameters `t`, `V`, `mu` and the same conserved quantum number `N`.
+## The model
 
-The two models differ *only* in the exchange statistics — that is, only through the Jordan-Wigner strings.
-On an open chain with nearest-neighbor hopping those strings cancel between adjacent sites, leaving $\hat S^+_j\hat S^-_{j+1} = \hat c^\dagger_j \hat c_{j+1}$ with no residual sign, so the two share every eigenvalue, sector by sector in $N$.
-Note the limits of the substitution: it is exact only for nearest-neighbor hopping on an open chain.
-Add periodic boundaries or hopping beyond nearest neighbors and the strings no longer cancel, at which point hard-core bosons and spinless fermions are genuinely different models — a point [DMRG-10](../dmrg09) returns to when it puts the chain on a ring.
+The $t$–$V$ chain, the lattice, and the Jordan–Wigner dictionary are all set up in [DMRG-07](../dmrg07); nothing about them changes here. Two choices are specific to this module.
 
-At $V=0$ the chain is exactly solvable.
-On an open chain the single-particle levels are:
+**No chemical potential.** A chemical potential shifts every sector by $-\mu N$, which is exactly the term that would make energies from different $N$ incomparable. Setting $\mu = 0$ means the numbers in the table below can be subtracted from one another directly.
 
-$$
-\varepsilon_k = -2t\cos\!\left(\frac{k\pi}{L+1}\right), \qquad k = 1,\dots,L ,
-$$
+**Two couplings.** Every sector is run twice: at $V = 2t$ for the interacting chain, and at $V = 0$ for the free-fermion reference.
 
-and the ground state energy at $N$ particles is the sum of the $N$ lowest of them.
-That closed form is the exact reference both models are measured against below.
+## Particle sectors
 
-## Where the two models disagree: the `dmrg` binary
+We will study the first three particle sectors. Each is small enough that its answer is known in closed form, which is what makes them a calibration rather than a calculation.
 
-The substitution is not cosmetic.
-Running the fermionic model through the legacy `dmrg` binary returns energies far below the true ground state — a variational impossibility, and a clear sign the matrix being diagonalized is not the intended Hamiltonian.
-On an $L=8$, $N=4$ chain at $V=0$, where the exact answer is $-4.758770483$:
+**$N=0$ sector:** The vacuum $|0\rangle$ is annihilated by every term in $\hat H$, so $E_0 = 0$ and $\langle n_i \rangle = 0$ on every site, for any $t$ and any $V$.
 
-| Model | `sparsediag` | `dmrg` |
-|---|---|---|
-| `spinless fermions` | $-4.7587704831436346$ | $-467.3$ |
-| `hardcore boson` | $-4.7587704831436346$ | $-4.7587704831436337$ |
-
-Read the table by column and by row.
-Down the `sparsediag` column the two models agree to sixteen digits: this is the Jordan-Wigner equivalence of [DMRG-07](../dmrg07) confirmed numerically rather than argued, and it is the demonstration this module exists to provide.
-Down the `dmrg` column they do not agree at all.
-Across the `hardcore boson` row both codes agree, so the two codes are not the problem either.
-Only one cell of the table is wrong, and isolating it that way is what makes the diagnosis possible: since `sparsediag` reproduces the fermionic spectrum correctly, the model *definition* in the ALPS library is sound, and the failure lies in what `dmrg` does with it.
-
-The size of the discrepancy rules out an accuracy problem before any mechanism need be considered.
-The single-particle levels above give the whole many-body spectrum at $V=0$: any eigenvalue is a sum of a subset of the eight $\varepsilon_k$, so the extreme values are obtained by filling all the negative levels or all the positive ones, and the entire spectrum — every state, in every particle-number sector — lies within
+**$N=1$ sector:** One particle hopping in a box of $L$ sites with hard walls. [DMRG-08](../dmrg08) gives the single-particle eigenstates of the open chain as standing waves $\varepsilon_n$, with the ground state energy at filling $N$ the sum of the $N$ lowest. For one particle that is $\varepsilon_1$, and the density profile is a half wavelength:
 
 $$
--4.758770483 \;\le\; E \;\le\; +4.758770483 .
+E_0(N{=}1) = -2t\cos\!\frac{\pi}{L+1}, \qquad
+\langle n_i \rangle = \frac{2}{L+1}\sin^2\!\frac{\pi i}{L+1} .
 $$
 
-The reported $-467.3$ is not merely below the ground state; it is roughly $98\times$ below the smallest eigenvalue the Hamiltonian possesses. No amount of truncation error, sweep count, or bond dimension can produce that. DMRG is variational: with a correct operator, the energy is a Rayleigh quotient $\langle\psi|H|\psi\rangle/\langle\psi|\psi\rangle$ over some trial state, and such a quotient is bounded below by the lowest eigenvalue no matter how bad the state is. A number outside the spectrum therefore proves the matrix being diagonalized is not $H$.
+Both are independent of $V$. This is the sharpest single check in the module: running $N=1$ at $V=0$ and at $V=2t$ must give *identical* numbers, and any difference is a bug rather than physics.
 
-### Why spinless fermions fail here
-
-The words "fermion sign" point naturally toward the sign problem, which is not what is happening.
-
-The [sign problem](../../../../documentation/models/sfm) is a pathology of *stochastic* methods: negative or complex weights in a Monte Carlo sampling cause the statistical error to grow exponentially with system size and inverse temperature. It degrades precision at fixed cost; it never returns an energy outside the spectrum, and it never appears in a deterministic calculation. DMRG performs no sampling at all, so it cannot have one — which is also why exact diagonalization handles the fermionic model here without difficulty.
-
-What fermions demand of DMRG is bookkeeping, not sampling. Anticommutation means $c^\dagger_i c_j$ acting across a partition of the chain carries a Jordan-Wigner string $\prod_{l<i}(1-2n_l)$ over every site in between, and those string factors must be inserted when the Hamiltonian is expressed in the renormalized block bases that DMRG builds and rebuilds each sweep. Get them right and the fermionic calculation is as well behaved as the bosonic one. Omit or misapply them and the assembled matrix is a different operator — one with no reason to be Hermitian, and hence no variational floor at all, which is consistent with a Lanczos iteration wandering a hundredfold below the true ground state. The exact defect in the legacy code is not something these two numbers can pin down; what they do establish is the category of failure, and that it is not statistical.
-
-The practical consequence is the same either way. The hard-core boson form is exactly the XXZ chain under the local Matsubara-Matsuda mapping, which needs no strings and holds on any lattice, so nothing is lost by using it — and on the open chain of this series, nothing is approximated either. The boson form is the one to use with `dmrg` throughout.
+**$N=2$ sector:** At $V=0$ the two particles fill the two lowest standing waves, $E_0 = \varepsilon_1 + \varepsilon_2$, and the density is the sum of the two, $\langle n_i \rangle = |\psi_1(i)|^2 + |\psi_2(i)|^2$ — a two-lobed profile with a dip in the middle, which is the hardcore constraint alone keeping the particles apart. At $V \neq 0$ the interaction finally has a pair to act on, and there is no closed form, so this is the one sector of the three whose energy has to be computed rather than written down.
 
 ## Parameters
 
 | Parameter | Meaning | Value |
 |---|---|---|
-| `LATTICE` | built-in open chain, no lattice file required | `open chain lattice` |
-| `MODEL` | the boson form, for the reason established above | `hardcore boson` |
+| `LATTICE` | built-in open chain, no lattice file needed (see the [ALPS lattice library](../../../../documentation/intro/latticehowtos)) | `open chain lattice` |
+| `MODEL` | hardcore-boson $t$–$V$ model, the usable form of the fermion chain (see [DMRG-10](../dmrg10)) | `hardcore boson` |
+| `CONSERVED_QUANTUMNUMBERS` | quantum number held fixed; this is what builds the fixed-$N$ blocks | `N` |
+| `N_total` | the block selected — one DMRG run per value | 0, 1, 2 |
 | `L` | chain length | 32 |
-| `CONSERVED_QUANTUMNUMBERS` | quantum numbers held fixed, used to block-diagonalize $H$ | `N` |
-| `N_total` | particle-number sector; $N=L/2$ is half filling | 16 |
 | `t` | nearest-neighbor hopping amplitude | 1 |
-| `V` | nearest-neighbor repulsion; $V=0$ is the free-fermion point | 0 |
-| `SWEEPS` | number of DMRG finite-size sweeps | 4 |
-| `NUMBER_EIGENVALUES` | eigenstates requested | 1 |
-| `MAXSTATES` | bond dimension $D$ kept after truncation | 20, 50, 100, 200 |
+| `V` | nearest-neighbor repulsion | 2 (isotropic point); 0 (free reference) |
+| `mu` | chemical potential, omitted so sectors stay comparable | — |
+| `SWEEPS` | number of DMRG finite-size sweeps | 6 |
+| `NUMBER_EIGENVALUES` | eigenstates requested per sector | 1 |
+| `MAXSTATES` | bond dimension $D$ kept after truncation | 100 |
+| `MEASURE_LOCAL[...]` | site-resolved observable to record | `n` |
 
-Note what has changed relative to the spin-chain modules.
-There is no `Sz_total`, because a spinless fermion has no spin to project; the sector is fixed by `N_total` instead.
-This is the parameter-file face of the dictionary $\hat S^z_{\text{tot}} = \hat N - L/2$ derived in [DMRG-07](../dmrg07): zero magnetization is half filling.
-Leaving `N_total` unset runs the calculation grand canonically over the full $2^L$-dimensional space, whereas fixing it restricts the calculation to the $\binom{32}{16} \approx 6.0\times10^{8}$ states of the half-filled sector.
+## Lattice
 
-## Parameter file
+The built-in `open chain lattice` is all that is needed. Every site is equivalent and every bond carries the same $t$ and $V$:
+
+```
+      t,V     t,V     t,V                 t,V     t,V
+  o-------o-------o-------o  . . .  o-------o-------o
+  1       2       3       4         30      31      32
+
+  every bond:  hopping t, interaction V
+  every site:  no chemical potential (mu = 0)
+
+  N particles distributed over these 32 sites; N is what N_total fixes
+```
+
+Open boundaries are what make the single-particle levels the clean $\cos(n\pi/(L+1))$ standing waves used as the reference above — on a ring they would be plane waves with a two-fold degeneracy, and the $N=2$ ground state would not be unique. No lattice file is required.
+
+## Choice of method
+
+The dilute sectors are tiny by the standards of this series:
+
+| sector | $\dim \mathcal{H}_N = \binom{L}{N}$ at $L=32$ |
+|---|---|
+| $N=0$ | 1 |
+| $N=1$ | 32 |
+| $N=2$ | 496 |
+| $N=16$ (half filling, for contrast) | $6.0\times10^{8}$ |
+
+Six orders of magnitude separate $N=2$ from the half-filled sector that forced DMRG on us in [DMRG-08](../dmrg08). That is what makes these blocks a calibration: the answers are known in advance, so the run is being measured rather than trusted. The energies below come from `dmrg`, each run taking a few seconds at $D=100$; the density profiles come from `sparsediag`, for the reason given under [Running the simulation](#running-the-simulation).
+
+## Parameter files
+
+The whole module is one parameter file. Each `{ ... }` line is one fixed-$N$ block, and the six blocks below cover both couplings, giving six independent runs from a single `dmrg` invocation — `parm_sectors`:
 
 ```
 LATTICE="open chain lattice"
 MODEL="hardcore boson"
 CONSERVED_QUANTUMNUMBERS="N"
-N_total=16
-t=1
-V=0
 L=32
+t=1
 NUMBER_EIGENVALUES=1
-{SWEEPS=4; MAXSTATES=20}
-{SWEEPS=4; MAXSTATES=50}
-{SWEEPS=4; MAXSTATES=100}
-{SWEEPS=4; MAXSTATES=200}
+SWEEPS=6
+MAXSTATES=100
+MEASURE_LOCAL[Local density]=n
+{ V=2; N_total=0 }
+{ V=2; N_total=1 }
+{ V=2; N_total=2 }
+{ V=0; N_total=0 }
+{ V=0; N_total=1 }
+{ V=0; N_total=2 }
 ```
 
-To reproduce the comparison table above, the same file with `MODEL="spinless fermions"` and `L=8`, `N_total=4` is run through both `sparsediag` and `dmrg`.
+or equivalently from Python, with `sectors.py`:
 
-## Lattice
-
-An open chain of $L=32$ sites, every bond carrying the same hopping $t$ and repulsion $V$, every site the same chemical potential $\mu$:
-
+```python
+import pyalps
+parms = []
+for V in [2, 0]:
+    for N in [0, 1, 2]:
+        parms.append( {
+            'LATTICE'                   : 'open chain lattice',
+            'MODEL'                     : 'hardcore boson',
+            'CONSERVED_QUANTUMNUMBERS'  : 'N',
+            'N_total'                   : N,
+            'L'                         : 32,
+            't'                         : 1,
+            'V'                         : V,
+            'SWEEPS'                    : 6,
+            'NUMBER_EIGENVALUES'        : 1,
+            'MAXSTATES'                 : 100,
+            'MEASURE_LOCAL[Local density]' : 'n'
+        } )
+input_file = pyalps.writeInputFiles('parm_sectors',parms)
+pyalps.runApplication('dmrg',input_file,writexml=True)
 ```
-   -mu          -mu          -mu                     -mu
-    o------------o------------o----- ... ------------o
-    1            2            3                      L=32
-       t, V         t, V                    t, V
-```
-
-The chain is the natural geometry here: DMRG is at its most accurate in one dimension, and the open ends are what make the Jordan-Wigner strings cancel, so the model equivalence tested on this page holds exactly.
-The `open chain lattice` is built in, so no lattice file is needed — see the [ALPS lattice library](../../../../documentation/intro/latticehowtos) for the other chain variants.
-What the open ends cost in return is the subject of [DMRG-10](../dmrg09).
-
-## Choice of method
-
-DMRG is the right tool for a 1D chain of this length: the half-filled sector holds about $6\times10^{8}$ states, far beyond exact diagonalization, yet the ground state is only lightly entangled and a bond dimension of a few hundred suffices.
-
-The $L=8$ comparison above is the exception, and deliberately so: at that length the full Hilbert space is small enough for `sparsediag` to diagonalize exactly, which is what makes it possible to attribute the discrepancy to the `dmrg` binary rather than to the model definition. Benchmarking one method against another only works where a third, exact method can arbitrate.
 
 ## Running the simulation
 
-From a parameter file named `parm_sf`:
+With the ALPS binaries on your `PATH`:
 
-```
-parameter2xml parm_sf
-dmrg --write-xml parm_sf.in.xml
-```
-
-Each task writes `parm_sf.taskN.out.xml`, containing the converged energy and truncation error.
-
-The script <a class="alps-download" href="../run_free_theory.py" data-filename="run_free_theory.py" target="_blank" rel="noopener">`run_free_theory.py`</a> does all of the above and tabulates the result against the exact answer:
-
-```
-python3 run_free_theory.py --L 32
+```bash
+parameter2xml parm_sectors
+dmrg --write-xml parm_sectors.in.xml
 ```
 
-It writes the parameter files, calls `parameter2xml` and `dmrg` for each bond dimension, parses the energies out of the XML, and prints the comparison table below.
+This produces six output files `parm_sectors.task1.out.xml` … `parm_sectors.task6.out.xml`, one per block, in the order the blocks appear in the file.
+
+The density profiles need a second run of the same parameters through `sparsediag`. The legacy ALPS `dmrg` application measures `MEASURE_LOCAL` observables only on the final two-site window of the sweep and returns zero on every other site, so it gives energies but not whole-chain profiles. These sectors hold 1, 32 and 496 states, so sparse diagonalization returns the exact profile in under a second — and its energies agree with the DMRG ones to twelve digits, which is the check that licenses mixing the two. Copy the file to a second stem first, so the DMRG results are not overwritten:
+
+```bash
+cp parm_sectors parm_sectors_ed
+parameter2xml parm_sectors_ed
+sparsediag --write-xml parm_sectors_ed.in.xml
+```
+
+The script <a class="alps-download" href="../run_number_sectors.py" data-filename="run_number_sectors.py" target="_blank" rel="noopener">`run_number_sectors.py`</a> runs the sectors, prints the tables below and draws the figure:
+
+```bash
+python3 run_number_sectors.py --L 32 --sectors 0 1 2 --plot sectors.png
+```
+
 Pass `--alps-bin /path/to/alps/bin` if the ALPS executables are not on your `PATH`.
 
-## Results
+## Evaluating the results
 
-With the model question settled, the boson form converges as it should.
-Ground state energy of the half-filled $L=32$ chain at $t=1$, $V=0$:
+Reading the energies and profiles back:
 
-| $D$ | $E_0$ (DMRG) | truncation error | $E_0 - E_{\text{exact}}$ |
-|---|---|---|---|
-| 20 | $-20.016369170590639$ | $5.232\times10^{-7}$ | $1.873\times10^{-5}$ |
-| 50 | $-20.016387897889135$ | $5.161\times10^{-11}$ | $2.596\times10^{-9}$ |
-| 100 | $-20.016387900483672$ | $3.235\times10^{-14}$ | $1.467\times10^{-12}$ |
-| 200 | $-20.016387900485153$ | $1.732\times10^{-16}$ | $-1.421\times10^{-14}$ |
-| exact | $-20.016387900485139$ | | |
+```python
+import numpy as np, matplotlib.pyplot as plt, pyalps
 
-By $D=200$ the DMRG energy agrees with the closed-form result to $1.4\times10^{-14}$, essentially machine precision.
-The error tracks the truncation error closely across four orders of magnitude, which is the practical basis for the extrapolation used in later modules: the truncation error is a computable proxy for the error in the energy, even when no exact answer is available to compare against.
+# energies from the DMRG run
+for run in pyalps.loadEigenstateMeasurements(
+        pyalps.getResultFiles(prefix='parm_sectors')):
+    N = int(run[0].props['N_total'])
+    V = float(run[0].props['V'])
+    for s in run:
+        if s.props['observable'] == 'Energy':
+            print('V = %g, N = %d:  E = %.12f' % (V, N, s.y[0]))
 
-Every entry in that table approaches the exact energy *from above* and stops there, which is the variational principle doing its job — and the contrast with the failure above is the point.
-A broken operator does not announce itself by converging slowly to a slightly wrong number; it converges to an impossible one.
-That is the check worth building into any fermionic DMRG run: compare against a bound rather than against an expectation. Here the free-fermion closed form supplies the bound exactly, but even a crude one is enough, since the failure mode overshoots it by a factor of a hundred rather than a percent.
+# profiles from the sparsediag run
+for run in pyalps.loadEigenstateMeasurements(
+        pyalps.getResultFiles(prefix='parm_sectors_ed')):
+    N = int(run[0].props['N_total'])
+    V = float(run[0].props['V'])
+    for s in run:
+        if s.props['observable'] == 'Local density' and V == 2:
+            y = np.real(np.asarray(s.y).flatten())
+            plt.plot(np.arange(1, len(y)+1), y, marker='o', ms=3,
+                     label='$N = %d$' % N)
+plt.xlabel('site $i$'); plt.ylabel(r'$\langle n_i \rangle$')
+plt.legend(); plt.show()
+```
 
-The intensive quantities are:
+A quick check on any profile run is that $\sum_i \langle n_i \rangle$ recovers `N_total`; here it does so exactly at every sector.
+
+### Energies
+
+$L = 32$, $t = 1$, $D = 100$, six sweeps. The last column is the closed-form free-fermion sum $\sum_{n\le N}\varepsilon_n$, which is the true answer everywhere except the interacting $N=2$ row:
+
+| $V$ | $N$ | $\dim\mathcal{H}_N$ | $E_0$ (`dmrg`) | exact free-fermion value |
+|---|---|---|---|---|
+| $2t$ | 0 | 1 | $0.000000000000$ | $0$ |
+| $2t$ | 1 | 32 | $-1.990943845146$ | $-1.990943845146$ |
+| $2t$ | 2 | 496 | $-3.953402017692$ | $-3.954801239672$ |
+| $0$ | 0 | 1 | $0.000000000000$ | $0$ |
+| $0$ | 1 | 32 | $-1.990943845146$ | $-1.990943845146$ |
+| $0$ | 2 | 496 | $-3.954801239672$ | $-3.954801239672$ |
+
+Three things are worth reading off this table.
+
+**The blocks are genuinely independent.** Six runs came out of one file, and each converged to the ground state *of its own sector* rather than to the global ground state, which lies far below all of these at half filling ($E_0 \approx -22$, see [DMRG-08](../dmrg08)).
+
+**The $N=1$ check passes.** The two $N=1$ rows agree to $10^{-14}$ across a change of the interaction from $0$ to $2t$, and both reproduce $-2t\cos(\pi/33)$ to twelve digits.
+
+**$N=2$ carries the interaction energy.** Switching on $V=2t$ raises the energy from the free value $\varepsilon_1 + \varepsilon_2$:
 
 $$
-\frac{E_0}{L} = -0.625512122, \qquad \frac{E_0}{L-1} = -0.645689932 ,
+E_0(V{=}2t) - E_0(V{=}0) \;=\; +1.4\times10^{-3} .
 $$
 
-against the thermodynamic-limit value $-2t/\pi = -0.636619772$ per site for the half-filled chain with periodic boundaries.
-Neither finite-$L$ number has converged to it yet, and the gap between the two is itself a boundary effect: dividing by $L$ or by $L-1$ should not matter in the thermodynamic limit, and at $L=32$ it matters in the second digit. That $O(1/L)$ discrepancy is exactly what [DMRG-10](../dmrg09) takes apart.
+It is positive, as a repulsion must be, and small — about $10^{-3}$ of the kinetic energy — because two particles spread over 32 sites are rarely adjacent. It is also far above the noise floor: DMRG resolves a shift of $10^{-3}$ against a total energy of $\sim 4$, on a run whose truncation error is $10^{-16}$.
+
+### Density profiles
+
+![Local density in the N=0, 1 and 2 particle-number sectors of a 32-site chain](/figs/dmrg/dmrg11_number_sectors.png)
+
+**Figure 1.** Open chain, $L=32$, $t=1$; profiles from `sparsediag`, energies from `dmrg` at $D=100$. (a) $\langle n_i \rangle$ in the three particle-number sectors at $V=2t$, with the exact one-particle standing wave $\tfrac{2}{L+1}\sin^2\tfrac{\pi i}{L+1}$ drawn underneath in gray. (b) The $N=2$ profile at $V=0$ and $V=2t$ over the central region: the repulsion pushes weight out of the middle of the chain and into the two lobes.
+
+Panel (a) is the three closed forms drawn out. $N=0$ is flat at zero, $N=1$ traces the single standing wave, and $N=2$ shows the two lobes and central dip of $|\psi_1|^2 + |\psi_2|^2$ — the particles already avoiding each other at $V=0$, purely because they are hardcore. The $N=1$ curve sits on the analytic profile and does not move between $V=0$ and $V=2t$, which is the $N=1$ check made visible.
+
+Panel (b) isolates what the interaction adds. The two curves lie on top of one another over most of the chain and separate only near the middle — which is where they must. The center is where the two single-particle states overlap most, so it is where the particles are most likely to end up on neighboring sites, and neighboring sites are the only configuration $V$ can act on at all. The repulsion therefore costs amplitude precisely there: it suppresses the middle and pushes the weight outward, deepening the dip and raising the two lobes. The split widens, and the particles sit further apart than the hardcore constraint alone would hold them. Nothing is created or destroyed doing it — whatever leaves the center reappears in the lobes.
+
+That last point is exact, and it is worth stating as a check rather than an observation. Every profile here satisfies the particle sum rule:
+
+$$
+\sum_i \langle n_i \rangle = N ,
+$$
+
+in every sector and at both couplings, to all reported digits. This is the fermionic face of the spin sum rule used in [DMRG-05](../../dmrg05), $\sum_i \langle S^z_i \rangle = S^z_{\text{tot}}$ — the same statement under the dictionary $S^z_{\text{tot}} = N - L/2$, and a profile that fails it is not converged in either language.
+
+Qualitatively, this is the same physics that becomes the charge-density-wave transition at $V > 2t$ once the chain is at half filling and there are enough particles for the avoidance to organize into a pattern. At $N=2$ it is visible in its simplest possible form: two particles and one dip.
 
 ## Summary
 
-On an open chain with nearest-neighbor hopping, `spinless fermions` and `hardcore boson` are the same model, and `sparsediag` confirms it to sixteen digits — the physical argument of [DMRG-07](../dmrg07), demonstrated rather than asserted. The legacy `dmrg` binary reproduces that spectrum only in the boson form, returning an energy $98\times$ below the smallest eigenvalue the Hamiltonian has in the fermionic one. That is Jordan-Wigner string bookkeeping failing, not a sign problem — DMRG samples nothing and cannot have one — and it means the boson form is not a convenience but a requirement. In that form the half-filled non-interacting chain is reproduced to machine precision at $D=200$.
+Declaring `N` conserved turns one Hamiltonian into a ladder of independent blocks, and stacking `{ N_total=... }` lines in a parameter file runs as many of them as you like from a single invocation. In the three dilute blocks the answers are known in closed form, and DMRG reproduces them: $E=0$ in the vacuum, the exact standing-wave energy and profile at $N=1$ for any $V$, and at $N=2$ the first sector where the interaction acts at all — worth $+1.4\times10^{-3}$ in energy and a small redistribution of density out of the chain center.
 
 ## Questions
 
-1. Verify the equivalence yourself on a small chain: run `sparsediag` with `MODEL="spinless fermions"` and with `MODEL="hardcore boson"` for $L=8$, $N_{\text{total}}=4$, and confirm that the spectra coincide sector by sector, not just in the ground state.
-2. Test the stated limit of the substitution: repeat that comparison on a *periodic* chain (`LATTICE="chain lattice"`) and confirm that the two energies now differ, as the surviving Jordan-Wigner string requires.
-3. Test the other stated limit: add a next-nearest-neighbor hopping $t'$ on the open chain. At what value of $t'/t$ does the fermion-boson discrepancy become visible above the truncation error?
-4. Does the fermionic `dmrg` failure depend on the sector? Repeat the $L=8$ run at $N_{\text{total}} = 1$, where a single particle has no other particle to exchange with, and at $N_{\text{total}} = 2$.
-5. How does the energy per site approach $-2t/\pi$ as $L$ grows? Run $L = 16, 32, 64, 128$ and fit the finite-size correction — is it $O(1/L)$ or $O(1/L^2)$? Compare your answer with [DMRG-10](../dmrg09).
+1. Continue up the ladder: add `{ V=2; N_total=3 }` and `{ V=2; N_total=4 }`. The interaction energy $E_0(V{=}2t) - E_0(V{=}0)$ grows with $N$ — does it grow like $N$, like $N^2$, or like something else, and what does that say about how often two particles are adjacent?
+2. Build the chemical potential back in. The addition energy $\mu(N) = E_0(N) - E_0(N-1)$ is what it costs to put one more particle on the chain. Compute it for $N = 1, 2, 3$ and check that at $V=0$ it reproduces the single-particle levels $\varepsilon_N$ exactly.
+3. Make $V$ attractive. Set $V = -2t$ at $N=2$: two particles now gain energy by sitting next to each other. Does the density profile develop a *peak* at the chain center instead of a dip, and can you find the threshold $|V|$ at which a two-particle bound state forms?
+4. Check the spin dictionary directly. Run the same three sectors as `MODEL="spin"` with `Sz_total` $= N - L/2$ at $J_{xy}=2t$, $J_z=V$, and confirm that the energies differ from the ones above only by the constant $J_z N_b/4$ derived in [DMRG-11](../dmrg11).
+5. Push the sector until DMRG has to work. Repeat at $N = L/4$ and $N = L/2$ with $D = 20$ and $D = 100$: at which filling do the two bond dimensions first disagree, and how does that track the Hilbert-space dimensions in the table above?

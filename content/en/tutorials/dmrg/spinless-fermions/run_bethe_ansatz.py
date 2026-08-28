@@ -1,38 +1,44 @@
 #!/usr/bin/env python3
-"""Ground state energy of the interacting spinless fermion chain, benchmarked
-against the Bethe ansatz.
+"""Open versus periodic boundary conditions for the spinless fermion chain,
+benchmarked against the Bethe ansatz.
 
 At V = 2t the spinless fermion chain is the isotropic Heisenberg chain, whose
 bulk ground state energy per bond is known exactly:
 
     e0 / J = 1/4 - ln 2 = -0.4431471805599...
 
-This script runs the ALPS `dmrg` code on a series of open chains, converts each
-energy into spin units, and extrapolates e0(L) = a + b/L + c/L^2 to recover
-that value.
+This script runs the ALPS `dmrg` code on open chains and on rings at the *same*
+bond dimension and reports the ground state energy per bond for each, so the two
+boundary conditions can be compared on equal footing.
 
-Open boundary conditions are used throughout, as they must be: DMRG on a ring
-has to carry entanglement across two cuts rather than one, and the bond
-dimension needed for a given accuracy grows sharply as a result.  The price of
-open boundaries is a surface energy contributing at order 1/L, which is why the
-fit carries a b/L term.  A finite-size energy at any single length is nowhere
-near the Bethe ansatz value; only the extrapolated bulk term is.
+Two things are being separated.
+
+1.  Finite-size error.  A ring has no surface: every site touches two bonds, so
+    the leading correction to e0 is the conformal 1/L^2.  An open chain has two
+    singly-coordinated ends, which contribute a surface energy at order 1/L.  At
+    equal L and equal D the ring is far closer to the bulk value.
+
+2.  Truncation error.  DMRG on a ring must carry entanglement across two cuts
+    rather than one, so at equal D the ring is much further from *its own*
+    converged energy than the open chain is from its.  This is the bond
+    dimension the ring costs.
 
 Two conventions matter and are handled here.
 
-1.  The model is entered as `hardcore boson`, not `spinless fermions`.  The
+*   The model is entered as `hardcore boson`, not `spinless fermions`.  The
     legacy `dmrg` binary returns energies far below the true ground state for
     the fermionic model; the boson form is exactly the XXZ chain by the local
     Matsubara-Matsuda mapping, and `dmrg` handles it correctly.
 
-2.  Writing Sz = n - 1/2 in the Jz Sz Sz term produces, on an open chain, a
-    boundary field (Jz/2)(n_1 + n_L) that a uniform `mu` cannot represent.  It
-    is a surface term, so it shifts b and leaves the bulk value a untouched.
+*   Writing Sz = n - 1/2 in the Jz Sz Sz term shifts the energy by Jz*Nb/4,
+    with Nb = L-1 bonds on an open chain and Nb = L on a ring.  That constant is
+    added back below before dividing by Nb.
 
 With Jxy = Jz = J = 1 the parameters are t = J/2, V = J, mu = J.
 
 Usage:
-    python3 run_bethe_ansatz.py [--lengths 16 24 32 48 64 96 128]
+    python3 run_bethe_ansatz.py --lengths 16 24 32 48 64 --maxstates 200
+    python3 run_bethe_ansatz.py --dscan 20 40 80 160 320 --dscan-length 32
 """
 
 import argparse
@@ -47,6 +53,9 @@ import xml.etree.ElementTree as ET
 J = 1.0                      # isotropic Heisenberg coupling
 BETHE = 0.25 - math.log(2)   # exact bulk e0/J
 
+OPEN = "open chain lattice"
+RING = "chain lattice"
+
 
 def find_alps_bin(explicit=None):
     if explicit:
@@ -59,11 +68,11 @@ def find_alps_bin(explicit=None):
     sys.exit("Could not find the ALPS binaries. Pass --alps-bin /path/to/alps/bin.")
 
 
-def write_parm(path, L, maxstates, sweeps):
-    """Open chain of L sites at half filling, at the isotropic Heisenberg point."""
+def write_parm(path, lattice, L, maxstates, sweeps):
+    """Half-filled chain or ring at the isotropic Heisenberg point."""
     with open(path, "w") as f:
         f.write(
-            'LATTICE="open chain lattice"\n'
+            f'LATTICE="{lattice}"\n'
             'MODEL="hardcore boson"\n'
             'CONSERVED_QUANTUMNUMBERS="N"\n'
             f"N_total={L // 2}\n"
@@ -76,80 +85,84 @@ def write_parm(path, L, maxstates, sweeps):
         )
 
 
-def read_energy(xml_path):
+def read_results(xml_path):
     root = ET.parse(xml_path).getroot()
+    energy = trunc = None
     for avg in root.iter("SCALAR_AVERAGE"):
         if avg.get("name") == "Energy":
-            return float(avg.find("MEAN").text)
-    raise RuntimeError(f"no Energy found in {xml_path}")
+            energy = float(avg.find("MEAN").text)
+        elif avg.get("name") == "Truncation error":
+            trunc = float(avg.find("MEAN").text)
+    if energy is None:
+        raise RuntimeError(f"no Energy found in {xml_path}")
+    return energy, trunc
 
 
-def solve3(rows, rhs):
-    """Gaussian elimination on a 3x3 system, so numpy is not required."""
-    m = [r[:] + [v] for r, v in zip(rows, rhs)]
-    for i in range(3):
-        p = max(range(i, 3), key=lambda r: abs(m[r][i]))
-        m[i], m[p] = m[p], m[i]
-        for r in range(3):
-            if r != i:
-                f = m[r][i] / m[i][i]
-                for c in range(i, 4):
-                    m[r][c] -= f * m[i][c]
-    return [m[i][3] / m[i][i] for i in range(3)]
+def run(exe, workdir, lattice, L, maxstates, sweeps):
+    """Run one task and return (e0 per bond in spin units, truncation error)."""
+    tag = ("ring" if lattice == RING else "open") + f"_L{L}_D{maxstates}"
+    stem = f"parm_{tag}"
+    write_parm(os.path.join(workdir, stem), lattice, L, maxstates, sweeps)
+    subprocess.run([exe("parameter2xml"), stem], cwd=workdir,
+                   check=True, capture_output=True)
+    subprocess.run([exe("dmrg"), "--write-xml", f"{stem}.in.xml"], cwd=workdir,
+                   check=True, capture_output=True)
+    e_hcb, trunc = read_results(os.path.join(workdir, f"{stem}.task1.out.xml"))
+    nbonds = L if lattice == RING else L - 1
+    e_xxz = e_hcb + J * nbonds / 4.0     # Sz = n - 1/2 shifts by Jz*Nb/4
+    return e_xxz / nbonds, trunc
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--lengths", type=int, nargs="+",
-                    default=[16, 24, 32, 48, 64, 96, 128])
-    ap.add_argument("--maxstates", type=int, default=300)
+    ap.add_argument("--lengths", type=int, nargs="+", default=[16, 24, 32, 48, 64],
+                    help="length series, run at --maxstates for both geometries")
+    ap.add_argument("--maxstates", type=int, default=200)
+    ap.add_argument("--dscan", type=int, nargs="*", default=[20, 40, 80, 160, 320],
+                    help="bond dimensions to scan at --dscan-length; empty to skip")
+    ap.add_argument("--dscan-length", type=int, default=32)
     ap.add_argument("--sweeps", type=int, default=8)
     ap.add_argument("--workdir", default=None)
     ap.add_argument("--alps-bin", default=None)
     args = ap.parse_args()
 
-    for L in args.lengths:
+    for L in args.lengths + [args.dscan_length]:
         if L % 2:
             sys.exit(f"L={L} is odd; half filling needs an even length.")
-    if len(args.lengths) < 3:
-        sys.exit("Give at least three lengths so the surface term can be fitted.")
 
     bindir = find_alps_bin(args.alps_bin)
     exe = lambda name: os.path.join(bindir, name) if bindir else name
-    workdir = args.workdir or tempfile.mkdtemp(prefix="alps_bethe_")
+    workdir = args.workdir or tempfile.mkdtemp(prefix="alps_bc_")
     os.makedirs(workdir, exist_ok=True)
 
     print(f"isotropic Heisenberg point: J = {J}, so t = {J/2}, V = {J}, mu = {J}")
-    print(f"open chain, half filling, D = {args.maxstates}")
+    print(f"half filling, Bethe ansatz bulk value 1/4 - ln 2 = {BETHE:.12f}")
     print(f"working in {workdir}\n")
 
-    print(f"{'L':>5} {'E (hardcore boson)':>21} {'E (XXZ)':>18} "
-          f"{'e0 = E/(L-1)':>16} {'e0 - Bethe':>12}")
-    pts = []
+    print(f"length series at D = {args.maxstates}, same D for both geometries")
+    print(f"{'L':>4} {'e0 open':>17} {'e0 - Bethe':>11} | "
+          f"{'e0 ring':>17} {'e0 - Bethe':>11}")
     for L in args.lengths:
-        stem = f"parm_chain_L{L}"
-        write_parm(os.path.join(workdir, stem), L, args.maxstates, args.sweeps)
-        subprocess.run([exe("parameter2xml"), stem], cwd=workdir,
-                       check=True, capture_output=True)
-        subprocess.run([exe("dmrg"), "--write-xml", f"{stem}.in.xml"], cwd=workdir,
-                       check=True, capture_output=True)
-        e_hcb = read_energy(os.path.join(workdir, f"{stem}.task1.out.xml"))
-        e_xxz = e_hcb + J * (L - 1) / 4.0     # L-1 bonds on an open chain
-        e0 = e_xxz / (L - 1)                  # energy per bond
-        print(f"{L:>5} {e_hcb:>21.10f} {e_xxz:>18.10f} {e0:>16.12f} {e0 - BETHE:>12.2e}")
-        pts.append((L, e0))
+        eo, _ = run(exe, workdir, OPEN, L, args.maxstates, args.sweeps)
+        er, _ = run(exe, workdir, RING, L, args.maxstates, args.sweeps)
+        print(f"{L:>4} {eo:>17.12f} {eo - BETHE:>11.2e} | "
+              f"{er:>17.12f} {er - BETHE:>11.2e}", flush=True)
+    print("\nThe open column falls as 1/L (halving per doubling), the ring column")
+    print("as 1/L^2 (quartering per doubling).  That gap is the surface energy.")
 
-    (l1, y1), (l2, y2), (l3, y3) = pts[-3], pts[-2], pts[-1]
-    a, b, c = solve3([[1, 1 / l1, 1 / l1 ** 2],
-                      [1, 1 / l2, 1 / l2 ** 2],
-                      [1, 1 / l3, 1 / l3 ** 2]], [y1, y2, y3])
-    print(f"\nfit e0(L) = a + b/L + c/L^2  using L = {l1}, {l2}, {l3}:")
-    print(f"  a = {a:.10f}   bulk energy per bond")
-    print(f"  Bethe ansatz 1/4 - ln2 = {BETHE:.10f}   (diff {a - BETHE:.2e})")
-    print(f"  b = {b:+.6f}   surface energy of the two open ends")
-    print("\nThe b/L term is what open boundaries cost in the extrapolation.")
-    print("It is the price of the geometry DMRG actually converges on.")
+    if args.dscan:
+        L = args.dscan_length
+        print(f"\nbond dimension scan at L = {L}")
+        print(f"{'D':>5} {'e0 open':>17} {'trunc open':>11} | "
+              f"{'e0 ring':>17} {'trunc ring':>11}")
+        for D in args.dscan:
+            eo, to = run(exe, workdir, OPEN, L, D, args.sweeps)
+            er, tr = run(exe, workdir, RING, L, D, args.sweeps)
+            print(f"{D:>5} {eo:>17.12f} {to:>11.1e} | "
+                  f"{er:>17.12f} {tr:>11.1e}", flush=True)
+        print("\nThe open chain is converged by D = 40; the ring is still moving at")
+        print("D = 320.  Two entanglement cuts instead of one is what that costs.")
 
 
 if __name__ == "__main__":

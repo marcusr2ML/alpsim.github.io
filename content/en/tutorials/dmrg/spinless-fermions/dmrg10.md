@@ -1,275 +1,157 @@
 ---
-title: DMRG-10 Boundary Conditions
+title: DMRG-10 Model Types in 1D
 weight: 4
 math: true
 toc: true
 ---
 
-Every simulation so far in this series has used an open chain, justified in passing as the geometry DMRG handles best. This module makes that choice the subject rather than the assumption, and puts a price on it.
+This module runs the ALPS `spinless fermions` model through the `dmrg` application at the free-fermion point, where the ground state energy is known in closed form at finite length, and checks the result against it. This verifies the physics based assertion made in [DMRG-08](../dmrg08) numerically: hardcore bosons behave as spinless fermions in 1D.
 
-Open and periodic boundaries give different answers at finite $L$, converge to the thermodynamic limit at different rates, and fail differently when the extrapolation is done carelessly. To measure any of that we need a known target, so we work at the one interaction strength where the Bethe ansatz supplies an exact bulk energy — $V = 2t$, the isotropic Heisenberg point — and compare the two geometries against it.
+## The model
 
-## The reference point
-
-The spinless fermion chain is:
+The spinless fermion chain with nearest-neighbor hopping and nearest-neighbor repulsion is:
 
 $$
-H = -t\sum_{i}\big(c^\dagger_i c_{i+1} + c^\dagger_{i+1} c_i\big) \;+\; V\sum_{i} n_i n_{i+1} \;-\; \mu\sum_{i} n_i ,
+H = -t\sum_{i=1}^{L-1}\big(c^\dagger_i c_{i+1} + c^\dagger_{i+1} c_i\big) \;+\; V\sum_{i=1}^{L-1} n_i n_{i+1} \;-\; \mu\sum_{i=1}^{L} n_i ,
 $$
 
-with $n_i = c^\dagger_i c_i \in \{0,1\}$, run in the `hardcore boson` form established in [DMRG-09](../dmrg08).
-Substituting $S^z_i = n_i - \tfrac12$ and the Jordan-Wigner strings of [DMRG-07](../dmrg07) into the XXZ chain:
+with $n_i = c^\dagger_i c_i \in \{0,1\}$.
+This is the built-in `spinless fermions` model of the ALPS model library.
+It is the fermionic image of the anisotropic Heisenberg chain solved by [Lieb, Schultz, and Mattis (1961)](https://doi.org/10.1016/0003-4916(61)90115-4), reached through the transformation of [Jordan and Wigner (1928)](https://doi.org/10.1007/BF01331938); again the DMRG algorithm itself is due to [White (1992)](https://doi.org/10.1103/PhysRevLett.69.2863).
+
+At $V=0$ the chain is exactly solvable.
+On an open chain the single-particle levels are:
 
 $$
-H_{\text{XXZ}} = \sum_i \Big[ J_{xy}\big(S^x_iS^x_{i+1} + S^y_iS^y_{i+1}\big) + J_z S^z_iS^z_{i+1} \Big] ,
+\varepsilon_k = -2t\cos\!\left(\frac{k\pi}{L+1}\right), \qquad k = 1,\dots,L ,
 $$
 
-identifies the two sets of couplings as:
-
-$$
-t = \frac{J_{xy}}{2}, \qquad V = J_z .
-$$
-
-The isotropic point $J_{xy} = J_z = J$ is therefore **$V = 2t$** — which is simultaneously the critical interaction strength at which the chain opens a charge-density-wave gap.
-This is the one interaction strength where the Bethe ansatz hands us a closed-form energy, established for the Heisenberg chain by [Bethe (1931)](https://doi.org/10.1007/BF01341708) and extended to the anisotropic chain by [Yang and Yang (1966)](https://doi.org/10.1103/PhysRev.150.321):
-
-$$
-\frac{e_0}{J} = \frac{1}{4} - \ln 2 = -0.4431471805599\ldots
-$$
-
-quoted per bond in the thermodynamic limit, the convention used in [DMRG-02](../../dmrg02) and throughout [DMRG-03](../../dmrg03).
-The DMRG algorithm itself is due to [White (1992)](https://doi.org/10.1103/PhysRevLett.69.2863).
-
-Note that the ring is a genuinely different model here, not just a different lattice: as [DMRG-09](../dmrg08) noted, periodic boundaries leave a surviving Jordan-Wigner string, so `hardcore boson` on a ring is the XXZ chain but no longer the spinless-fermion chain. The comparison below is between two boundary conditions on the *spin* problem, which is what the Bethe ansatz value refers to.
-
-## Where the surface term comes from
-
-Expanding the interaction with $S^z = n - \tfrac12$:
-
-$$
-J_z\sum_{\langle ij\rangle} S^z_iS^z_j = J_z\sum_{\langle ij\rangle} n_in_j \;-\; \frac{J_z}{2}\sum_i z_i n_i \;+\; \frac{J_z N_b}{4} ,
-$$
-
-where $z_i$ counts the bonds touching site $i$ and $N_b$ is the number of bonds.
-In the bulk $z_i = 2$ and the middle term is $-J_z\hat N$, a constant at fixed filling.
-
-This is where the two geometries part company.
-A ring has $z_i = 2$ everywhere and $N_b = L$: the middle term is a constant outright, and there is no surface at all.
-An open chain has $N_b = L-1$ and $z_i = 1$ at the two ends, leaving a boundary field $\tfrac{J_z}{2}(n_1 + n_L)$ that ALPS's uniform `mu` cannot represent.
-
-This is a *surface* term: it leaves the bulk energy density untouched and contributes at order $1/L$.
-That does not make it harmless.
-It costs a full order in the finite-size scaling, and the cost is severe.
-The ring's leading correction is the conformal $1/L^2$; the open chain converges only as $1/L$.
-Measured against the same Bethe ansatz value, at equal length:
-
-| $L$ | ring, $\|e_0 - e_\infty\|$ | open chain, $\|e_0 - e_\infty\|$ | ratio |
-|---|---|---|---|
-| 16 | $3.25\times10^{-3}$ | $6.07\times10^{-2}$ | 19× |
-| 24 | $1.44\times10^{-3}$ | $4.00\times10^{-2}$ | 28× |
-| 32 | $8.07\times10^{-4}$ | $2.99\times10^{-2}$ | 37× |
-
-The ratio *grows* with $L$, as two different powers must.
-Reaching the raw accuracy of a $32$-site ring would take an open chain of roughly $1200$ sites.
-
-## The cost of a ring
-
-That table would seem to settle the matter in favor of periodic boundaries, and it does not, because it measures only one of the two costs involved.
-
-DMRG on a ring must carry entanglement across two cuts rather than one, and the bond dimension needed for a given accuracy grows sharply as a result: the results below reach $L=128$ at $D=300$ with open boundaries, whereas a ring needs $D=600$ to manage $L=32$.
-The two effects pull against each other — the ring converges in $L$ two orders faster, the open chain reaches lengths the ring cannot — and which one wins depends on whether you can fit the surface term out.
-
-Here we can, for two reasons, and it is worth being clear that the extrapolation is doing the work, not the raw data.
-First, the $1/L$ form is known in advance, so the surface term can be fitted out rather than waited out.
-Second, open boundaries are cheap enough to reach $L=128$ at $D=300$, so the fit has a long, clean lever arm to work with.
-The extrapolated bulk values end up comparable either way ($4.9\times10^{-6}$ open, $3.1\times10^{-6}$ ring), but only because the open chain compensates in length for what it gives up in convergence order — and, as [the closing section](#how-much-the-surface-term-really-costs) shows, only because the correct fit form was known going in.
+and the ground state energy at $N$ particles is the sum of the $N$ lowest of them.
+The DMRG energies below are measured against that closed form, which is exact at finite $L$ rather than an extrapolation.
 
 ## Parameters
 
-With $J = 1$, so $t = J/2$, $V = J$, $\mu = J$:
-
 | Parameter | Meaning | Value |
 |---|---|---|
-| `LATTICE` | the boundary condition under study | `open chain lattice` / `chain lattice` |
-| `MODEL` | the boson form, established in [DMRG-09](../dmrg08) | `hardcore boson` |
-| `L` | chain length | 16, 24, 32, 48, 64, 96, 128 (open); 16, 24, 32 (ring) |
-| `CONSERVED_QUANTUMNUMBERS` | quantum numbers held fixed | `N` |
-| `N_total` | particle-number sector; $L/2$ is half filling $\Leftrightarrow S^z_{\text{tot}} = 0$ | $L/2$ |
-| `t` | hopping, $=J_{xy}/2$ | 0.5 |
-| `V` | nearest-neighbor repulsion, $=J_z$; note $V = 2t$ | 1 |
-| `mu` | chemical potential, $=J_z$, cancelling the $-J_z\hat N$ term | 1 |
-| `SWEEPS` | finite-size sweeps | 8 |
+| `LATTICE` | built-in open chain, no lattice file required | `open chain lattice` |
+| `MODEL` | the ALPS spinless-fermion model | `spinless fermions` |
+| `L` | chain length | 8, 16, 32, 64 |
+| `CONSERVED_QUANTUMNUMBERS` | quantum numbers held fixed, used to block-diagonalize $H$ | `N` |
+| `N_total` | particle-number sector; $N=L/2$ is half filling | $L/2$ |
+| `t` | nearest-neighbor hopping amplitude | 1 |
+| `V` | nearest-neighbor repulsion; $V=0$ is the free-fermion point | 0 |
+| `SWEEPS` | number of DMRG finite-size sweeps | 4 |
 | `NUMBER_EIGENVALUES` | eigenstates requested | 1 |
-| `MAXSTATES` | bond dimension $D$ | 300 (open); 600 (ring) |
+| `MAXSTATES` | bond dimension $D$ kept after truncation | 100 |
 
-The only parameter that distinguishes the two runs is `LATTICE`; `MAXSTATES` then has to follow, for the entanglement reason above.
+Note there is no `Sz_total` because a spinless fermion has no spin to project. Instead, the sector is fixed by `N_total` as described in [DMRG-07](../dmrg07).
+As a cautionary reminder, `Sz_total` is related to particle number: $\hat S^z_{\text{tot}} = \hat N - L/2$. For instance, zero magnetization corresponds to half filling.
+Leaving `N_total` unset runs the calculation grand canonically over the full $2^L$-dimensional space, whereas fixing it to the half-filled sector (at $L=64$) restricts to the system to the $\binom{64}{32}\approx1.8\times10^{18}$ states.
 
-There is no `Sz_total` anywhere: a spinless fermion has no spin to project, and the sector is fixed by `N_total` instead.
-That substitution is the parameter-file face of $\hat S^z_{\text{tot}} = \hat N - L/2$ from [DMRG-07](../dmrg07).
-
-## Parameter files
-
-The open chain, at the longest length of the series:
+## Parameter file
 
 ```
 LATTICE="open chain lattice"
-MODEL="hardcore boson"
+MODEL="spinless fermions"
 CONSERVED_QUANTUMNUMBERS="N"
-N_total=64
-t=0.5
-V=1
-mu=1
-L=128
+N_total=32
+t=1
+V=0
+L=64
 NUMBER_EIGENVALUES=1
-{SWEEPS=8; MAXSTATES=300}
-```
-
-The ring, at the longest length it can reach for the same effort:
-
-```
-LATTICE="chain lattice"
-MODEL="hardcore boson"
-CONSERVED_QUANTUMNUMBERS="N"
-N_total=16
-t=0.5
-V=1
-mu=1
-L=32
-NUMBER_EIGENVALUES=1
-{SWEEPS=8; MAXSTATES=600}
+{SWEEPS=4; MAXSTATES=100}
 ```
 
 ## Lattice
 
-An open chain of $L$ sites with $L-1$ bonds, every site carrying $-\mu\, n_i$ and every bond the same $t$ and $V$:
+Our example takes place on an open chain of $L$ sites with every bond carrying the same hopping $t$ and repulsion $V$, while every site the same chemical potential $\mu$:
 
 ```
-   -mu       -mu       -mu                       -mu       -mu
-    o---------o---------o------- ... -------------o---------o
-    1         2         3                        L-1        L
-       t, V      t, V         t, V         t, V
-
-    ^                                                       ^
-    z = 1                                                   z = 1     <- boundary field lives here
-              z = 2 everywhere in between
+   -mu          -mu          -mu                     -mu
+    o------------o------------o----- ... ------------o
+    1            2            3                      L
+       t, V         t, V                    t, V
 ```
 
-The two end sites touch one bond instead of two, which is the origin of the surface term.
-The ring closes that gap, adding an $L$-th bond and making every site equivalent:
+Here we use the `open chain lattice`; see [ALPS lattice library](../../../../documentation/intro/latticehowtos) for other chain variants.
 
+## What ALPS builds from the parameter file
+
+The lattice is the same built-in `open chain lattice` used in [DMRG-08](../dmrg08) — $L$ vertices, $L-1$ edges, open boundaries, no lattice file needed. Nothing about it changes here. What changes is the Hamiltonian stamped onto it, and that is the whole subject of this module, so it is worth reading the definition.
+
+`spinless fermions` is an entry in the ALPS library `models.xml`: a site basis, plus the terms to place on the vertices and edges the lattice hands over.
+
+```xml
+<SITEBASIS name="spinless fermion">
+  <QUANTUMNUMBER name="N" min="0" max="1" type="fermionic"/>
+  <OPERATOR name="cdag" matrixelement="1"><CHANGE quantumnumber="N" change="1"/></OPERATOR>
+  <OPERATOR name="c"    matrixelement="1"><CHANGE quantumnumber="N" change="-1"/></OPERATOR>
+  <OPERATOR name="n"    matrixelement="N"/>
+</SITEBASIS>
+
+<HAMILTONIAN name="spinless fermions">
+  <PARAMETER name="mu" default="0"/>
+  <PARAMETER name="t"  default="1"/>
+  <PARAMETER name="V"  default="0"/>
+  <BASIS ref="spinless fermion"/>
+  <SITETERM site="i">
+    -mu#*n(i)
+  </SITETERM>
+  <BONDTERM source="i" target="j">
+    -t#*(cdag(i)*c(j)+cdag(j)*c(i)) + V#*n(i)*n(j)
+  </BONDTERM>
+</HAMILTONIAN>
 ```
-        t, V      t, V         t, V         t, V
-    o---------o---------o------- ... -------------o
-    |  -mu       -mu       -mu                -mu |
-    1         2         3                         L
-    |                  t, V                       |
-    +---------------------------------------------+
 
-    z = 2 everywhere, no surface, one extra cut for DMRG to carry
-```
+`min="0" max="1"` is the hardcore constraint: a site is empty or singly occupied, nothing else. The `SITETERM` goes on every vertex and the `BONDTERM` on every edge, so the open chain turns them into the $L$ chemical-potential terms and $L-1$ hopping-and-interaction terms of the Hamiltonian at the top of this page.
 
-Both `open chain lattice` and `chain lattice` are built in, so no lattice file is needed — see the [ALPS lattice library](../../../../documentation/intro/latticehowtos).
-
-## Choice of method
-
-DMRG reaches chain lengths far past exact diagonalization: already at $L=32$ the half-filled sector holds $\binom{32}{16}\approx6.0\times10^{8}$ states, and the runs below go to $L=128$.
-With open boundaries a bond dimension of $D=300$ is enough across that whole range, because the chain has a single cut to carry entanglement across.
-At $L=16$ the result reproduces exact diagonalization to $4\times10^{-15}$, which matters for the argument below: it means every discrepancy in the tables is a boundary effect and not a truncation error.
-
-The ring is run in the same `hardcore boson` form for the reason given in [DMRG-09](../dmrg08) — the fermionic model is not usable with the legacy `dmrg` binary — and on a ring that form is the XXZ chain rather than the fermion chain, which is the comparison intended here.
+The line that matters for this module is `type="fermionic"`. It tells ALPS that `N` counts fermions rather than bosons, so the Jordan–Wigner strings that give `cdag(i)*c(j)` its anticommuting sign are inserted for you: the bond term above is written as though the operators commuted, and ALPS supplies the signs. Declare the same basis without that attribute and you have hardcore bosons, with an identical-looking bond term — the two models differ by nothing else. On an open chain the strings cancel between neighbors and the two must agree exactly, which is what the energies below test.
 
 ## Running the simulation
 
-```
-parameter2xml parm_chain
-dmrg --write-xml parm_chain.in.xml
-```
-
-The script <a class="alps-download" href="../run_bethe_ansatz.py" data-filename="run_bethe_ansatz.py" target="_blank" rel="noopener">`run_bethe_ansatz.py`</a> sweeps the whole length series, converts each energy to spin units, and performs the extrapolation:
+Note that at $L=32$ the half-filled sector already holds $\binom{32}{16}\approx6.0\times10^{8}$ states and at $L=64$ about $1.8\times10^{18}$, far beyond exact diagonalization. DMRG is the right tool across this whole range. Since the ground state of the free model ($V=0$) is lightly entangled, a bond dimension of a few hundred reaches machine precision, with each run below converging in seconds.
 
 ```
-python3 run_bethe_ansatz.py --lengths 16 24 32 48 64 96 128 --maxstates 300
+parameter2xml parm_sf
+dmrg --write-xml parm_sf.in.xml
 ```
 
-Pass `--alps-bin /path/to/alps/bin` if the ALPS executables are not on your `PATH`.
+Each task writes `parm_sf.taskN.out.xml`, containing the converged energy and the truncation error.
 
 ## Results
 
-Each DMRG energy is converted to spin units by adding the constant derived above, $E_{\text{XXZ}} = E_{\text{hcb}} + J_z N_b/4$, and divided by the number of bonds — $N_b = L-1$ on the open chain, $N_b = L$ on the ring. The open-chain series:
+Below is a list of ground state energies ($E_0=\sum_{k=1}^{N}\varepsilon_k$) at half filling, with parameters $t=1$, $V=0$, $D=100$, for different system sizes:
 
-| $L$ | $E$ (hardcore boson) | $E$ (XXZ) | $e_0 = E/(L-1)$ | $e_0 - (1/4-\ln 2)$ |
+| $L$ | $N$ | $E_0$ (`dmrg`) | $E_0$ (exact) | difference |
 |---|---|---|---|---|
-| 16 | $-11.3074087080$ | $-7.5574087080$ | $-0.503827247202$ | $-6.07\times10^{-2}$ |
-| 24 | $-16.8632093523$ | $-11.1132093523$ | $-0.483183015316$ | $-4.00\times10^{-2}$ |
-| 32 | $-22.4142204664$ | $-14.6642204664$ | $-0.473039369885$ | $-2.99\times10^{-2}$ |
-| 48 | $-33.5108427370$ | $-21.7608427370$ | $-0.462996653979$ | $-1.98\times10^{-2}$ |
-| 64 | $-44.6045271479$ | $-28.8545271479$ | $-0.458008367427$ | $-1.49\times10^{-2}$ |
-| 96 | $-66.7887264214$ | $-43.0387264214$ | $-0.453039225488$ | $-9.89\times10^{-3}$ |
-| 128 | $-88.9712527981$ | $-57.2212527981$ | $-0.450561045654$ | $-7.41\times10^{-3}$ |
+| 8 | 4 | $-4.758770483143635$ | $-4.758770483143634$ | $1.8\times10^{-15}$ |
+| 16 | 8 | $-9.837951447459423$ | $-9.837951447459421$ | $1.8\times10^{-15}$ |
+| 32 | 16 | $-20.016387900483664$ | $-20.016387900485139$ | $1.5\times10^{-12}$ |
+| 64 | 32 | $-40.384313159844041$ | $-40.384313161218486$ | $1.4\times10^{-9}$ |
 
-No single length is close to the Bethe ansatz value — even at $L=128$ the energy is still $7\times10^{-3}$ away, and the gap shrinks only as $1/L$.
-That slow approach is the surface energy, and it is the dominant error in this calculation by four orders of magnitude: the DMRG truncation error at these bond dimensions is around $10^{-14}$, while the finite-size deviation is $10^{-2}$.
-Nothing is gained here by pushing $D$ higher; everything depends on the extrapolation.
-Note how cleanly the last column halves as $L$ doubles: $-1.49\times10^{-2}$ at $L=64$ against $-7.41\times10^{-3}$ at $L=128$.
-That is the signature of a pure $1/L$ surface term rather than a bulk error — and the ring column of the earlier table, which falls by a factor of four rather than two over the same doubling, is the signature of $1/L^2$.
+The chain converges to machine precision for $L=32$ and below, and to nine digits at $L=64$.
 
-Fitting $e_0(L) = a + b/L + c/L^2$ to the three longest open chains gives:
+Note, $D=100$ is more than this problem needs. The half-chain entanglement entropy of a free-fermion chain grows only logarithmically, $S \simeq \tfrac{1}{6}\ln(2L/\pi) + 0.48$, giving $S \approx 1.1$ at $L=64$ — so a handful of Schmidt states carry nearly all the weight, and the rest of the bond dimension buys digits rather than physics. At $L=64$:
 
-$$
-a = -0.4431520707 \quad\text{against}\quad \tfrac14 - \ln 2 = -0.4431471806 ,
-$$
+| $D$ | truncation error | $E_0 - E_{\text{exact}}$ |
+|---|---|---|
+| 20 | $2.85\times10^{-6}$ | $3.20\times10^{-4}$ |
+| 50 | $3.27\times10^{-9}$ | $3.98\times10^{-7}$ |
+| 100 | $1.40\times10^{-11}$ | $1.37\times10^{-9}$ |
+| 200 | $1.21\times10^{-14}$ | $1.16\times10^{-12}$ |
 
-a difference of $4.9\times10^{-6}$, with a surface coefficient:
+Seven digits are already available at $D=50$. The two columns fall together, their ratio holding near $25$ across eight orders of magnitude, which is the proportionality that licenses extrapolation to $D\to\infty$ when no exact answer is at hand.
 
-$$
-b = -0.945895 .
-$$
-
-The bulk energy is recovered to six digits from data whose raw finite-size error is four orders of magnitude larger.
-The residual is not DMRG truncation error — at $L=16$ the energy matched exact diagonalization to $4\times10^{-15}$ — but the logarithmic corrections peculiar to the isotropic point, which decay more slowly than any power and make $\Delta=1$ the hardest place on the XXZ line to extrapolate.
-
-## How much the surface term really costs
-
-The extrapolated answer above is about as accurate as one obtained from rings, which invites the wrong conclusion — that the boundary term is bookkeeping.
-It is not, but the cost is not where one might first look.
-
-**It is not in the stability of the fit.**
-Refitting over every choice of lengths, the extrapolated bulk value moves by:
-
-| | spread in $a$ across fit windows |
-|---|---|
-| open chain, $a + b/L + c/L^2$, all 3-point windows | $1.70\times10^{-4}$ |
-| ring, $a + b/L^2$, all 2-point windows | $1.45\times10^{-4}$ |
-
-Essentially the same. Having a surface term to fit does not make the fit noticeably more fragile against which lengths you feed it.
-
-**It is in the consequence of getting the fit form wrong.**
-The two geometries are not equally forgiving:
-
-| Data | Fit form used | Extrapolated $a$ | Error |
-|---|---|---|---|
-| open | $a + b/L + c/L^2$ (correct) | $-0.4431521$ | $4.9\times10^{-6}$ |
-| open | $a + b/L^2$ (surface term omitted) | $-0.4473748$ | $4.2\times10^{-3}$ |
-| ring | $a + b/L^2$ (correct) | $-0.4431440$ | $3.1\times10^{-6}$ |
-| ring | $a + b/L + c/L^2$ (spurious surface term) | $-0.4431593$ | $1.2\times10^{-5}$ |
-
-Omitting a surface term that is really there costs a factor of $850$.
-Including one that is not there costs a factor of $4$.
-
-That asymmetry is the real price of open boundaries.
-On a ring, translational symmetry *guarantees* there is no surface contribution — the leading correction is the conformal $1/L^2$ and you cannot get the form wrong.
-On an open chain the correct form is something you must know in advance and put in by hand.
-Here we knew it, because we knew the answer we were extrapolating toward and could check.
-In a calculation where the answer is not known ahead of time — which is the only kind worth doing — that assurance is absent, and the $4.2\times10^{-3}$ column is the size of the mistake available to anyone who assumes the conformal form without asking whether the geometry has a surface.
+The intensive energy per site at $L=64$ is $E_0/L = -0.631005$, against the thermodynamic-limit value $-2t/\pi = -0.636620$ for the half-filled chain; the remaining gap is the open chain's $O(1/L)$ boundary correction, which [DMRG-11](../dmrg11) takes apart.
 
 ## Summary
 
-Open and periodic boundaries are not interchangeable. The open chain carries a $1/L$ surface term from its two singly-coordinated end sites, converging an order slower than the ring's conformal $1/L^2$ — 37× worse at $L=32$, and widening. It is used anyway because a single entanglement cut buys $L=128$ at $D=300$ where a ring needs $D=600$ for $L=32$, and because a known $1/L$ form can be fitted out: extrapolated that way, open-boundary DMRG reproduces the bulk value $1/4-\ln 2$ to $4.9\times10^{-6}$. The asymmetry in the last table is the warning that comes with it — the fit form is an input on an open chain, and a guarantee only on a ring.
+The ALPS `spinless fermions` model reproduces the exact free-fermion ground state energy of the open chain to machine precision at $L \le 32$ and to $1.4\times10^{-9}$ at $L=64$, with $D=100$ and four sweeps. The `sparse_ed` module would be hopelessly overwhelmed at these system sizes, showcasing the utility of `dmrg` in 1D systems.
 
 ## Questions
 
-1. Reproduce the ring column directly. Run `LATTICE="chain lattice"` at $L = 16, 24, 32$ with $D = 600$ and confirm both the energies and that $D=300$ is *not* enough — where does the ring's truncation error sit relative to the open chain's at equal $D$?
-2. Measure the surface energy directly. The fitted $b$ should match $E_0(L) - L\,e_0(\infty)$ as $L\to\infty$ — check that it does, and see how much of it comes from the boundary field $\tfrac{J_z}{2}(n_1+n_L)$ rather than the missing bond itself.
-3. Cancel the surface term instead of fitting it. Use the special-edge lattice of [DMRG-08](../dmrg07-simulations) to set $\mu_j = \tfrac{V}{2}z_j$ site by site, which removes the boundary field exactly. Does the open chain now converge as $1/L^2$, and how close does a two-point fit get?
-4. Add a logarithmic correction to the fit, $e_0(L) = a + b/L + c/(L\ln^3 L)$. How much of the $4.9\times10^{-6}$ residual does it absorb, and does the ring benefit equally?
-5. Repeat the boundary comparison off the isotropic point, at $V = t$ ($\Delta = 1/2$) inside the gapless phase and at $V = 3t$ ($\Delta = 3/2$) inside the gapped CDW phase. Once the chain is no longer critical the correlation length is finite — does the open-chain penalty survive?
+1. Fit the energy error against the truncation error across $D = 20, 50, 100, 200$ at $L=64$ and extrapolate to $\epsilon \to 0$. How much better than the raw $D=200$ result does the extrapolation get?
+2. Move off half filling to $N = L/4$. The closed form is still exact — does the convergence in $D$ improve or degrade, and why?
+3. Turn on the interaction. At what value of $V/t$ does the bond dimension needed for a fixed accuracy start to grow sharply, and how does that relate to the transition at $V=2t$?
+4. Track $E_0/L$ as $L$ grows toward $-2t/\pi$. Is the finite-size correction $O(1/L)$ or $O(1/L^2)$, and what does that imply about the boundary?
+5. Dump the term list for a periodic chain (`LATTICE="chain lattice"`). The Jordan-Wigner strings no longer cancel between sites 1 and $L$ — which extra terms appear, and what sign do they carry?

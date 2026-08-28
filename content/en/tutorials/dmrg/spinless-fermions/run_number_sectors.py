@@ -19,14 +19,19 @@ In spin language S^z_i = n_i - 1/2, so these are the sectors S^z_tot = N - L/2
 at the bottom of the magnetisation ladder: the fully polarised state and the
 one- and two-magnon states built on it.  <n_i> is the magnon density.
 
-`dmrg` supplies both the energies and the density profiles.  Because these
-sectors are tiny -- 496 states at N=2, L=32 -- `sparsediag` can be run on the
-very same parameter file and its answer used as exact ground truth, which is
-what `--check` does.
+`dmrg` supplies the energies, and every one is checked against a closed form:
+E = 0 at N = 0, and the free-fermion level sum at N = 1 (exact for any V) and
+at N = 2, V = 0.
+
+The density profiles come from `sparsediag` instead.  The legacy ALPS `dmrg`
+application measures MEASURE_LOCAL observables only on the final two-site
+window of the sweep and reports zero on every other site, so it cannot give a
+whole-chain profile.  These sectors are tiny -- 1, 32 and 496 states -- so
+sparse diagonalisation returns the exact profile in well under a second, and
+its energies agree with the DMRG ones to twelve digits, which is checked below.
 
 Usage:
     python3 run_number_sectors.py [--L 32] [--sectors 0 1 2] [--plot fig.png]
-                                  [--check]
 """
 
 import argparse
@@ -118,8 +123,6 @@ def main():
     ap.add_argument("--sweeps", type=int, default=6)
     ap.add_argument("--maxstates", type=int, default=100)
     ap.add_argument("--plot", default=None, help="write the profile figure to this path")
-    ap.add_argument("--check", action="store_true",
-                    help="also run sparsediag on the same file as an exact cross-check")
     ap.add_argument("--workdir", default=None)
     ap.add_argument("--alps-bin", default=None)
     args = ap.parse_args()
@@ -142,38 +145,33 @@ def main():
                args.sweeps, args.maxstates)
     dmrg = run(exe, "dmrg", stem, workdir, ntasks)
 
-    ed = None
-    if args.check:
-        stem_ed = "parm_sectors_ed"
-        write_parm(os.path.join(workdir, stem_ed), L, t, sectors, couplings,
-                   args.sweeps, args.maxstates)
-        ed = run(exe, "sparsediag", stem_ed, workdir, ntasks)
+    # Profiles: sparsediag, because `dmrg` only measures the final sweep window.
+    ed_stem = "parm_sectors_ed"
+    write_parm(os.path.join(workdir, ed_stem), L, t, sectors, couplings,
+               args.sweeps, args.maxstates)
+    ed = run(exe, "sparsediag", ed_stem, workdir, ntasks)
 
-    head = f"{'V':>6} {'N':>3} {'dim':>10} {'E (dmrg)':>18}"
-    if ed:
-        head += f" {'E (sparsediag)':>18} {'|difference|':>13}"
-    print(head + f" {'E free (exact)':>18}")
+    print(f"{'V':>6} {'N':>3} {'dim':>10} {'E (dmrg)':>18} {'E free (exact)':>18}")
     for V in couplings:
         for N in sectors:
             dim = math.comb(L, N)
-            e_dmrg = dmrg[(V, N)][0]
-            row = f"{V:>6.1f} {N:>3} {dim:>10} {e_dmrg:>18.12f}"
-            if ed:
-                e_ed = ed[(V, N)][0]
-                row += f" {e_ed:>18.12f} {abs(e_dmrg - e_ed):>13.1e}"
-            print(row + f" {exact_free_energy(L, N, t):>18.12f}")
+            print(f"{V:>6.1f} {N:>3} {dim:>10} {dmrg[(V, N)][0]:>18.12f} "
+                  f"{exact_free_energy(L, N, t):>18.12f}")
+
+    worst = max(abs(dmrg[k][0] - ed[k][0]) for k in dmrg)
+    print(f"\nlargest dmrg vs sparsediag energy difference: {worst:.1e}")
 
     if 1 in sectors:
         exact = exact_one_particle_profile(L)
-        got = dmrg[(couplings[0], 1)][1]
+        got = ed[(couplings[0], 1)][1]
         dev = max(abs(a - b) for a, b in zip(got, exact))
         print(f"\nN=1 profile against 2/(L+1) sin^2(pi i/(L+1)): max deviation {dev:.1e}")
 
     if 2 in sectors:
         e_int = dmrg[(2.0 * t, 2)][0] - dmrg[(0.0, 2)][0]
         print(f"N=2 interaction energy E(V=2t) - E(V=0) = {e_int:+.10f}")
-        n_int = dmrg[(2.0 * t, 2)][1]
-        n_free = dmrg[(0.0, 2)][1]
+        n_int = ed[(2.0 * t, 2)][1]
+        n_free = ed[(0.0, 2)][1]
         mid = L // 2 - 1
         print(f"N=2 central density  <n_{mid+1}>: {n_free[mid]:.6f} at V=0, "
               f"{n_int[mid]:.6f} at V=2t")
@@ -181,13 +179,13 @@ def main():
               f"{max(abs(a - b) for a, b in zip(n_int, n_free)):.2e}")
 
     print()
-    for (V, N), (_, profile) in sorted(dmrg.items()):
+    for (V, N), (_, profile) in sorted(ed.items()):
         if profile is not None:
             print(f"V={V:g}, N={N}: sum_i <n_i> = {sum(profile):.8f}  "
                   f"(sum rule: {N})")
 
     if args.plot:
-        make_plot(args.plot, L, sectors, couplings, dmrg)
+        make_plot(args.plot, L, sectors, couplings, ed)
         print(f"\nfigure written to {args.plot}")
 
 
