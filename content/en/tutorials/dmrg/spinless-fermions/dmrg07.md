@@ -146,7 +146,7 @@ $$
 \boxed{\;\hat P_j \;=\; \prod_{l<j} e^{i\pi \hat n_l} \;=\; \prod_{l<j}\big(1 - 2\hat n_l\big) \;=\; \prod_{l<j}\big(-2\hat S^z_l\big)\;}
 $$
 
-$\hat P_j$ measures the **parity of the number of fermions to the left of $j$**: it returns $+1$ if that number is even, $-1$ if odd. It is manifestly non-local — it depends on the entire left half of the chain — and it is $\hat P_j^\dagger = \hat P_j = \hat P_j^{-1}$.
+$\hat P_j$ measures the **parity of the number of fermions to the left of $j$**: it returns $+1$ if that number is even, $-1$ if odd. It is manifestly non-local — it depends on the entire left half of the chain — and it is $\hat P_j^\dagger = \hat P_j = \hat P_j^{-1}$. It's job is to count the number of anticommutation relations a fermionic operator undergoes on traversing the lattice, and it supplies the necessary sign to faithfully reproduce the above commutation relations.
 
 The sought after transformation is now at our fingertips and it takes the following form:
 $$
@@ -173,7 +173,7 @@ So $\hat c_j$ is *not* just a local spin flip: it is "flip the spin at $j$, and 
 
 ### Why the string does the job
 
-Most of the algebra is skipped here; instead we point out some key facts. The one identity that carries all the weight: on a single site, the parity operator **anticommutes** with the spin flip:
+Without getting into the gory algebraic details we outline why the string operator works. The one identity that carries all the weight follows from considering a single site and noting the parity operator **anticommutes** with the spin flip:
 
 $$
 \big\{\hat S^z_i,\, \hat S^{\pm}_i\big\} = 0
@@ -181,20 +181,14 @@ $$
 \big\{ e^{i\pi\hat n_i},\, \hat S^{\pm}_i \big\} = 0 .
 $$
 
-Physically: flipping the site *changes* its parity, so flip and parity anticommute. Assuming $i<j$, it can be seen that every factor in $\hat P_j$ commutes with $\hat S_i^-$ **except** $e^{i\pi\hat{n}_i}$, which anticommutes with it, giving:
-
-$$
-\big\{\hat c_i,\, \hat c^\dagger_j\big\} = 0 \qquad (i \neq j) . \quad\checkmark
-$$
-
-The same argument gives $\{\hat c_i,\hat c_j\} = 0$, and on-site the single-site algebra already gave $\{\hat c_i,\hat c^\dagger_i\} = \{\hat S^-_i,\hat S^+_i\} = \hat{\mathbb 1}$. So altogether:
+Physically: flipping the site *changes* its parity, so flip and parity anticommute. Assuming $i<j$ (W.L.O.G.), it can be seen that every factor in $\hat P_j$ commutes with $\hat S_i^-$ **except** $e^{i\pi\hat{n}_i}$, which anticommutes with it. Following your nose you can show the following anticommutation relations:
 
 $$
 \big\{\hat c_i,\hat c^\dagger_j\big\} = \delta_{ij}, \qquad
 \big\{\hat c_i,\hat c_j\big\} = \big\{\hat c^\dagger_i,\hat c^\dagger_j\big\} = 0 .
 $$
 
-**The string is exactly the minimal fix.** It supplies the $(-1)$ needed for exchange, and — because $\hat P_j^2 = 1$ — it contributes nothing else. The map is unitary and the Hilbert space is unchanged ($2^L$ states either way); we have only relabeled the basis and redefined which operators we call elementary.
+**The string is exactly the minimal fix.** It supplies the $(-1)$ needed for exchange, and, because $\hat P_j^2 = 1$, it contributes nothing else. The map is unitary and the Hilbert space is unchanged ($2^L$ states either way); we have only relabeled the basis and redefined which operators we call elementary.
 
 > The price is that the ordering $1,2,\dots,L$ has been given physical meaning. Jordan–Wigner is natural in 1D precisely because a chain has an unambiguous "to the left of". In higher dimensions the string has no canonical path, which is why the trick does not straightforwardly generalize; the two-dimensional constructions of [Fradkin (1989)](https://doi.org/10.1103/PhysRevLett.63.322) pick a path and pay for it with a gauge field.
 
