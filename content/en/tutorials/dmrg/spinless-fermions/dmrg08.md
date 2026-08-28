@@ -23,7 +23,7 @@ $$
 
 with hopping amplitude $t$, nearest-neighbor repulsion $V$, and a (possibly site-dependent) chemical potential $\mu_j$. The model is integrable: via the [Jordan–Wigner transformation](https://doi.org/10.1007/BF01331938) it is equivalent to the XXZ chain solved exactly by [Yang and Yang](https://doi.org/10.1103/PhysRev.150.321), and its critical phase is the standard lattice realization of the [Luttinger liquid](https://doi.org/10.1088/0022-3719/14/19/010).
 
-The dictionary from the [Introduction](../dmrg07), applied to an open chain bond by bond, reads
+The dictionary from the [Introduction](../dmrg07), applied to an open chain bond by bond, reads:
 
 $$
 t = \frac{J}{2}, \qquad V = J\Delta,
@@ -39,12 +39,12 @@ where $z_j$ is the coordination number of site $j$ ($z=2$ in the bulk, $z=1$ at 
 ### Running fermions in the boson basis
 
 {{< callout type="info" >}}
-On an open chain, all Jordan–Wigner strings cancel in nearest-neighbor terms, so the fermionic $t$–$V$ chain, the XXZ spin chain, and the **hardcore-boson** $t$–$V$ chain have *identical* energy spectra, sector by sector in the particle number $N$. The ALPS model library defines `hardcore boson` with exactly the same parameters (`t`, `V`, `mu#`) and the same conserved quantum number `N` as `spinless fermions`, so every parameter file below sets `MODEL="hardcore boson"`. This is not just a convenience: the classic `dmrg` application does not treat the fermionic sign bookkeeping of `MODEL="spinless fermions"` reliably. [DMRG-09](../dmrg08) makes the case in full, with the energies and convergence of the two models side by side.
+On an open chain, all Jordan–Wigner strings cancel in nearest-neighbor terms, so the fermionic $t$–$V$ chain, the XXZ spin chain, and the **hardcore-boson** $t$–$V$ chain have *identical* energy spectra, sector by sector in the particle number $N$. The ALPS model library defines `hardcore boson` with exactly the same parameters (`t`, `V`, `mu#`) and the same conserved quantum number `N` as `spinless fermions`, so every parameter file below sets `MODEL="hardcore boson"`. This is not just a convenience: the classic `dmrg` application does not treat the fermionic sign bookkeeping of `MODEL="spinless fermions"` reliably. [DMRG-10](../dmrg10) makes the case in full, with the energies and convergence of the two models side by side.
 {{< /callout >}}
 
 ## Choice of method
 
-At half filling the relevant Hilbert-space sector has dimension
+At half filling the relevant Hilbert-space sector has dimension:
 
 $$
 \dim \mathcal{H}_{N=L/2} = \binom{L}{L/2} \;\xrightarrow{\;L=32\;}\; \binom{32}{16} \approx 6.0\times 10^{8},
@@ -54,7 +54,7 @@ far beyond the reach of full or sparse diagonalization. DMRG is the method of ch
 
 ## Free fermions ($V=0$)
 
-At $V=0$ the model is a free-fermion band $\varepsilon(k) = -2t\cos k$. For an *open* chain the single-particle eigenstates are standing waves with energies
+At $V=0$ the model is a free-fermion band $\varepsilon(k) = -2t\cos k$. For an *open* chain the single-particle eigenstates are standing waves with energies:
 
 $$
 \varepsilon_n = -2t\,\cos\!\left(\frac{n\pi}{L+1}\right), \qquad n = 1,\dots,L ,
@@ -150,7 +150,7 @@ The first pair of commands produces `spinless_free.task1.out.xml`; the second pr
 
 ## Interacting fermions at the Heisenberg point ($V=2t$)
 
-We now switch on the interaction and choose $t=\tfrac12$, $V=1$, i.e. $J = 2t = 1$ and $\Delta = V/J = 1$: the isotropic Heisenberg chain of [DMRG-03](../../dmrg03) in fermion language. To make the correspondence *exact* rather than only asymptotic, we must include the site-dependent chemical potential $\mu_j = \tfrac{V}{2} z_j$ derived above: $\mu = V$ on bulk sites but $\mu = V/2$ on the two end sites, which have only one neighbor. The predicted ground state energy is then
+We now switch on the interaction and choose $t=\tfrac12$, $V=1$, i.e. $J = 2t = 1$ and $\Delta = V/J = 1$: the isotropic Heisenberg chain of [DMRG-03](../../dmrg03) in fermion language. To make the correspondence *exact* rather than only asymptotic, we must include the site-dependent chemical potential $\mu_j = \tfrac{V}{2} z_j$ derived above: $\mu = V$ on bulk sites but $\mu = V/2$ on the two end sites, which have only one neighbor. The predicted ground state energy is then:
 
 $$
 E_0^{tV} \;=\; E_0^{\text{Heis}}(L=32) - \frac{V(L-1)}{4}
