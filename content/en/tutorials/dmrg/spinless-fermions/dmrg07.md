@@ -5,7 +5,7 @@ math: true
 toc: true
 ---
 
-In this tutorial series we revisit the Heisenberg chain we saw in the previous modules, but the analysis is done through the lens of spinless fermions. Here we focus on the XXZ Heisenberg model, and translate it into the language of spinless fermions using a Jordan–Wigner transformation. Throughout this series we will see that the two languages describe the same system, albeit with different symmetries available, making one more suitable than the other depending on what is being studied.
+In this tutorial series we revisit the Heisenberg chain we saw in the previous modules, but the analysis is done through the lens of spinless fermions. Here we focus on the XXZ Heisenberg model, and translate it into the language of spinless fermions using the transformation introduced by [Jordan and Wigner (1928)](https://doi.org/10.1007/BF01331938). That mapping became a solution method in the hands of [Lieb, Schultz, and Mattis (1961)](https://doi.org/10.1016/0003-4916(61)90115-4), who used it to diagonalize the XY chain exactly. Throughout this series we will see that the two languages describe the same system, albeit with different symmetries available, making one more suitable than the other depending on what is being studied.
 
 ---
 
@@ -24,6 +24,8 @@ As before, the local Hilbert space at each site is two-dimensional, $\{\lvert\up
 | $0$ | XX model | will turn out to be *free* fermions |
 | $1$ | isotropic Heisenberg | $SU(2)$ symmetric |
 | $\to\infty$ | Ising limit | classical, ordered |
+
+Each of these limits comes with an exact result to check against. At $\Delta = 0$ the chain is the XY model diagonalized by [Lieb, Schultz, and Mattis (1961)](https://doi.org/10.1016/0003-4916(61)90115-4), which is free fermions once the mapping below is in place. At $\Delta = 1$ the ground state energy follows from the Bethe ansatz of [Bethe (1931)](https://doi.org/10.1007/BF01341708), and the full anisotropic line was solved by [Yang and Yang (1966)](https://doi.org/10.1103/PhysRev.150.321). These are the reference numbers the DMRG runs are benchmarked against in [DMRG-08](../dmrg08) and [DMRG-11](../dmrg11).
 
 Let's now proceed by playing the usual game of defining the ladder operators to cast the above Hamiltonian in a more pleasing analytic form:
 
@@ -130,7 +132,7 @@ Zero magnetization $\Leftrightarrow$ half filling.
 
 ## The Jordan–Wigner transformation
 
-We will now cover the Jordan–Wigner transformation, skipping most of the algebraic details. This is a good exercise, but will not be too important for our purposes.
+We will now cover the Jordan–Wigner transformation, skipping most of the algebraic details. This is a good exercise, but will not be too important for our purposes. The construction is the one given in [Jordan and Wigner's 1928 paper](https://doi.org/10.1007/BF01331938), where it was introduced to write fermion operators in terms of spins.
 
 Start by defining the local parity operator on site $l$:
 
@@ -194,7 +196,7 @@ $$
 
 **The string is exactly the minimal fix.** It supplies the $(-1)$ needed for exchange, and — because $\hat P_j^2 = 1$ — it contributes nothing else. The map is unitary and the Hilbert space is unchanged ($2^L$ states either way); we have only relabeled the basis and redefined which operators we call elementary.
 
-> The price is that the ordering $1,2,\dots,L$ has been given physical meaning. Jordan–Wigner is natural in 1D precisely because a chain has an unambiguous "to the left of". In higher dimensions the string has no canonical path, which is why the trick does not straightforwardly generalize.
+> The price is that the ordering $1,2,\dots,L$ has been given physical meaning. Jordan–Wigner is natural in 1D precisely because a chain has an unambiguous "to the left of". In higher dimensions the string has no canonical path, which is why the trick does not straightforwardly generalize; the two-dimensional constructions of [Fradkin (1989)](https://doi.org/10.1103/PhysRevLett.63.322) pick a path and pay for it with a gauge field.
 
 ---
 
@@ -282,7 +284,7 @@ $$
 \mathcal{H} = \bigoplus_{N=0}^{L} \mathcal{H}_N , \qquad \dim \mathcal{H}_N = \binom{L}{N}, \qquad \sum_{N=0}^{L}\binom{L}{N} = 2^L ,
 $$
 
-and every eigenstate can be labeled $\lvert E, N\rangle$. Practically this is a large saving: instead of diagonalizing a $2^L \times 2^L$ matrix one diagonalizes each $\binom{L}{N}\times\binom{L}{N}$ block separately. The dictionary between the two languages:
+and every eigenstate can be labeled $\lvert E, N\rangle$. Practically this is a large saving: instead of diagonalizing a $2^L \times 2^L$ matrix one diagonalizes each $\binom{L}{N}\times\binom{L}{N}$ block separately. DMRG, introduced by [White (1992)](https://doi.org/10.1103/PhysRevLett.69.2863), exploits the same block structure by carrying the quantum number through the renormalized basis; see the review by [Schollwöck (2005)](https://doi.org/10.1103/RevModPhys.77.259) for how abelian symmetries are implemented in practice. [DMRG-09](../dmrg09) puts this to work by targeting fixed particle-number sectors. The dictionary between the two languages:
 
 | Spin language | Fermion language |
 |---|---|
