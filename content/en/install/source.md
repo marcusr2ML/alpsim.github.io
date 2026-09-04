@@ -26,6 +26,14 @@ Choose **one** MPI and **one** BLAS provider that fit your system:
 | BLAS | 0.3 | `libopenblas-dev` | `openblas-devel` |
 | Python | 3.9 | [python.org](https://www.python.org/) | [python.org](https://www.python.org/) |
 
+⚠ **Caution — virtual environments.** Any environment (a Python virtual environment,
+`micromamba`, conda) changes which Python and libraries CMake finds. The `cmake` command in
+[Download and Build](#download-and-build) then needs custom flags naming them — without those
+the build picks up the wrong interpreter and fails. See
+[the no-root guide](/codes/install/no_root_guide.pdf) for the flags each kind of environment
+needs; a conda environment also has a known Boost/Python ABI problem — see
+[Common Errors](#common-errors).
+
 
 <details id="assisted-install" class="install-section">
 <summary><strong>Install with agent (optional)</strong></summary>
@@ -94,14 +102,6 @@ python3 -m pip install numpy scipy
 
 > **Do not install Boost via `apt`.** ALPS must compile Boost from source instead —
 > see [Boost Error Details](#boost-error-details) in Troubleshooting for why, and how to build offline.
-
-⚠ **Caution — virtual environments.** Any environment (a Python virtual environment,
-`micromamba`, conda) changes which Python and libraries CMake finds. The `cmake` command in
-[Download and Build](#download-and-build) then needs custom flags naming them — without those
-the build picks up the wrong interpreter and fails. See
-[the no-root guide](/codes/install/no_root_guide.pdf) for the flags each kind of environment
-needs; a conda environment also has a known Boost/Python ABI problem — see
-[Common Errors](#common-errors).
 </details>
 
 <details>
@@ -165,14 +165,6 @@ mpirun --version                       # Open MPI >= 4.1
 > **Do not install `boost-devel`.** ALPS must compile Boost from source instead — if a system
 > Boost is present CMake will find it and the build fails with `boost::filesystem` /
 > `auto_ptr` errors. See [Boost Error Details](#boost-error-details) in Troubleshooting.
-
-⚠ **Caution — virtual environments.** Any environment (a Python virtual environment,
-`micromamba`, conda) changes which Python and libraries CMake finds. The `cmake` command in
-[Download and Build](#download-and-build) then needs custom flags naming them — without those
-the build picks up the wrong interpreter and fails. See
-[the no-root guide](/codes/install/no_root_guide.pdf) for the flags each kind of environment
-needs; a conda environment also has a known Boost/Python ABI problem — see
-[Common Errors](#common-errors).
 </details>
 
 </details>
@@ -194,14 +186,6 @@ pip3 install numpy scipy
 
 > **Do not install Boost via Homebrew.** ALPS must compile Boost from source instead —
 > see [Boost Error Details](#boost-error-details) in Troubleshooting for why, and how to build offline.
-
-⚠ **Caution — virtual environments.** Any environment (a Python virtual environment,
-`micromamba`, conda) changes which Python and libraries CMake finds. The `cmake` command in
-[Download and Build](#download-and-build) then needs custom flags naming them — without those
-the build picks up the wrong interpreter and fails. See
-[the no-root guide](/codes/install/no_root_guide.pdf) for the flags each kind of environment
-needs; a conda environment also has a known Boost/Python ABI problem — see
-[Common Errors](#common-errors).
 </details>
 
 <details>
@@ -224,14 +208,6 @@ pip3 install numpy scipy
 
 > **Do not install Boost via MacPorts.** ALPS must compile Boost from source instead —
 > see [Boost Error Details](#boost-error-details) in Troubleshooting for why, and how to build offline.
-
-⚠ **Caution — virtual environments.** Any environment (a Python virtual environment,
-`micromamba`, conda) changes which Python and libraries CMake finds. The `cmake` command in
-[Download and Build](#download-and-build) then needs custom flags naming them — without those
-the build picks up the wrong interpreter and fails. See
-[the no-root guide](/codes/install/no_root_guide.pdf) for the flags each kind of environment
-needs; a conda environment also has a known Boost/Python ABI problem — see
-[Common Errors](#common-errors).
 </details>
 </details>
 
