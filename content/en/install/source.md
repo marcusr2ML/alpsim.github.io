@@ -98,12 +98,9 @@ python3 -m pip install numpy scipy
 <details>
 <summary><strong> Rocky Linux / RHEL / AlmaLinux</strong> </summary>
 
-Package names on RHEL-family systems follow a different convention from Debian's: development
-headers carry a `-devel` suffix instead of a `lib...-dev` name, and there is no `build-essential`
-metapackage. Two dependencies also live outside the default repositories.
-
-**Enable EPEL and CRB first** — `hdf5-devel` is in EPEL and `openblas-devel` is in CRB
-(called PowerTools on Rocky 8); neither repository is enabled on a stock install:
+**Enable EPEL and CRB first.** Two dependencies live outside the default repositories:
+`hdf5-devel` is in EPEL and `openblas-devel` is in CRB (called PowerTools on Rocky 8), and
+neither repository is enabled on a stock install:
 
 ```ShellSession
 sudo dnf install -y epel-release
