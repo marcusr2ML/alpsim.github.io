@@ -15,36 +15,28 @@ For most cases, it is preferred to [install ALPS from Binaries](../binary). Howe
 ALPS relies on a handful of external libraries. 
 Choose **one** MPI and **one** BLAS provider that fit your system:
 
-| Dependency | Minimum version | Debian / Ubuntu (`apt`) | Rocky / RHEL (`dnf`) | macOS (`brew`) |
-|----------|--------------------|---------------------------|---------------------------|------------------|
-| HDF5     | 1.10.0 | `libhdf5-dev` | `hdf5-devel` | `hdf5` |
-| C++ Compiler | GCC 10.5.0 & Clang 13.0.1 | `build-essential` | `gcc gcc-c++ make` | Xcode CLT |
-| Fortran Compiler | *(any; needed for LAPACK detection)* | `gfortran` | `gcc-gfortran` | `gcc` |
-| Boost | 1.76 <br>*(1.87 required to build ALPS Python bindings against NumPy ≥ 2.0)* | see below | see below | see below |
-| MPI | OpenMPI 4.0 **or** MPICH 4.0 | `libopenmpi-dev` / `libmpich-dev` | `openmpi-devel` / `mpich-devel` | `open-mpi` / `mpich` |
-| BLAS | 0.3 | `libopenblas-dev` | `openblas-devel` | `openblas` |
-| Python | 3.9 | [python.org](https://www.python.org/) | [python.org](https://www.python.org/) | `python@3.11` |
+| Dependency | Minimum version | Debian / Ubuntu (`apt`) | Rocky / RHEL (`dnf`) |
+|----------|--------------------|---------------------------|---------------------------|
+| HDF5     | 1.10.0 | `libhdf5-dev` | `hdf5-devel` |
+| C++ Compiler | GCC 10.5.0 & Clang 13.0.1 | `build-essential` | `gcc gcc-c++ make` |
+| Fortran Compiler | *(any; needed for LAPACK detection)* | `gfortran` | `gcc-gfortran` |
+| Boost | 1.76 <br>*(1.87 required to build ALPS Python bindings against NumPy ≥ 2.0)* | see below | see below |
+| MPI | OpenMPI 4.0 **or** MPICH 4.0 | `libopenmpi-dev` / `libmpich-dev` | `openmpi-devel` / `mpich-devel` |
+| BLAS | 0.3 | `libopenblas-dev` | `openblas-devel` |
+| Python | 3.9 | [python.org](https://www.python.org/) | [python.org](https://www.python.org/) |
 
-> **No root access?** Every route below installs packages system-wide. If you cannot,
-> the dependencies have to come from a prefix you own instead, and the `cmake` command
-> changes with them. That procedure is kept in a separate guide rather than on this page:
-> <a class="alps-download" href="/codes/install/no_root_guide.pdf" data-filename="no_root_guide.pdf" target="_blank" rel="noopener">`no_root_guide.pdf`</a>
-> — Ubuntu, Rocky Linux and macOS, each with a micromamba route and a package-unpacking
-> fallback, and the configure flags each one needs.
 
 <details id="assisted-install" class="install-section">
 <summary><strong>Install with agent (optional)</strong></summary>
 
-If you use a command-line coding agent, the two files below can drive the whole
+If you use a command-line coding agent, the files below can drive the whole
 install: they probe your system, ask whether you have root, and pick a route for you.
 The agent is instructed to follow the directions in them. **Note: it is inherently safer to create an environment your agent can work in or to revoke its root access.**
 
 **1. Download the instruction files.**
-
-* <a class="alps-download" href="/codes/install/alps-install-agent.md" data-filename="alps-install-agent.md" target="_blank" rel="noopener">`alps-install-agent.md`</a> — the procedure the agent follows.
-* <a class="alps-download" href="/codes/install/no_root_guide.pdf" data-filename="no_root_guide.pdf" target="_blank" rel="noopener">`no_root_guide.pdf`</a> — the per-system reference it consults when you answer that you have no root.
-
-It is convenient to save both to the folder you'll be working in.
+<a class="alps-download" href="/codes/install/alps-install-agent.md" data-filename="alps-install-agent.md" target="_blank" rel="noopener">`alps-install-agent.md`</a> is the procedure the agent follows;
+<a class="alps-download" href="/codes/install/no_root_guide.pdf" data-filename="no_root_guide.pdf" target="_blank" rel="noopener">`no_root_guide.pdf`</a> is the per-system reference it uses when you have no root.
+It is convenient to save them to the folder you'll be working in.
 
 **2. Hand them to your agent.** Start the agent in the directory where you saved the files (or provide the paths) and
 give it the files plus your intent:
@@ -65,8 +57,9 @@ outside a prefix you have approved, so you stay in control of each step.
 2. **Probe the system** — compiler and Python versions, whether the Python headers are
    present, HDF5 and MPI, `module avail`, free space in `$HOME`. It checks whether each tool
    is *usable*, not merely installed.
-3. **Recommend a route** and show you the probe lines that decided it — the system packages
-   on this page if you have root, otherwise one of the routes in `no_root_guide.pdf`.
+3. **Recommend a route** and show you the probe lines that decided it — system packages if you
+   have root, otherwise cluster modules, a package-unpacking prefix, or a `micromamba`
+   environment.
 4. **Configure, build, verify** — ending with a 2-D Ising run whose result it checks. It
    asks first whether to keep the run in an `ising_results/` directory or just print the
    numbers, and offers to plot |M| vs T (asking before installing `matplotlib` if you do
@@ -85,41 +78,18 @@ outside a prefix you have approved, so you stay in control of each step.
 <details>
 <summary><strong> Ubuntu / Debian / WSL</strong> </summary>
 
-**Install the dependencies:**
-
 ```ShellSession
 sudo apt update
-sudo apt install build-essential gfortran cmake git \
+sudo apt install build-essential \
                    libhdf5-dev \
                    libopenblas-dev \
                    libopenmpi-dev openmpi-bin # or: libmpich-dev mpich
+
+# install Python libs:
+pip install numpy scipy # python libraries 
+# or 
+python3 -m pip install numpy scipy
 ```
-
-**Install the Python libraries** for the interpreter CMake will build against:
-
-```ShellSession
-sudo apt install python3-dev python3-numpy python3-scipy
-```
-
-On 23.04 and later `pip install numpy scipy` into the system Python is refused
-(`externally-managed-environment`). Either use the `python3-*` packages above, or create a
-virtual environment and pass it to CMake with `-DPython3_EXECUTABLE=`.
-
-**Check what your release ships.** The C++ compiler is the one dependency `apt` may not be
-able to satisfy:
-
-| Release | Default GCC | Verdict |
-|---|---|---|
-| 20.04 | 9 | Below the 10.5.0 minimum — `sudo apt install gcc-11 g++-11 gfortran-11` and pass `-DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 -DCMAKE_Fortran_COMPILER=gfortran-11` |
-| 22.04 | 11 | Fine as-is |
-| 24.04 | 13 | Fine as-is; ships NumPy 2, which is why CMake fetches Boost 1.87 |
-
-**Put the results on the `PATH`.** Nothing further is needed — `apt` installs MPI into
-`/usr/bin`, so `mpicc` and `mpirun` work in any shell.
-
-> **A Fortran compiler is required.** OpenBLAS provides LAPACK, whose CMake detection
-> compiles a Fortran test program. Without `gfortran` configuration fails at the
-> BLAS/LAPACK check.
 
 > **Do not install Boost via `apt`.** ALPS must compile Boost from source instead —
 > see [Boost Error Details](#boost-error-details) in Troubleshooting for why, and how to build offline.
@@ -149,7 +119,7 @@ sudo dnf makecache
 
 ```ShellSession
 sudo dnf install -y \
-    gcc gcc-c++ gcc-gfortran make cmake git \
+    gcc gcc-c++ gcc-gfortran make git \
     hdf5 hdf5-devel \
     openblas openblas-devel \
     openmpi openmpi-devel \
@@ -162,7 +132,7 @@ sudo dnf install -y \
 ```ShellSession
 sudo dnf install -y \
     gcc-toolset-14 gcc-toolset-14-gcc-c++ gcc-toolset-14-gcc-gfortran \
-    make cmake git \
+    make git \
     hdf5 hdf5-devel \
     openblas openblas-devel \
     openmpi openmpi-devel \
@@ -194,9 +164,6 @@ mpirun --version                       # Open MPI >= 4.1
 > to any Slurm/PBS job script — a job that runs in a different environment than the build will
 > fail at load time on missing `.so` files.
 
-> **Prefer a threaded BLAS if you have one.** `openblas-threads` and `openblas-openmp`
-> (with their `-devel` packages) are drop-in replacements for plain `openblas-devel`.
-
 > **Do not install `boost-devel`.** ALPS must compile Boost from source instead — if a system
 > Boost is present CMake will find it and the build fails with `boost::filesystem` /
 > `auto_ptr` errors. See [Boost Error Details](#boost-error-details) in Troubleshooting.
@@ -221,33 +188,18 @@ xcode-select --install
 ```ShellSession
 brew update
 brew install hdf5 \
-               openblas open-mpi libomp \
+               openblas open-mpi \
                python@3.11 # or: mpich
 ```
-
-**`libomp` supplies OpenMP.** Apple's Clang ships without an OpenMP runtime, so pass
-`-DOpenMP_ROOT="$(brew --prefix libomp)"` at configure time. If you would rather use a real
-GCC, `brew install gcc` provides `gcc-14`/`g++-14`/`gfortran-14`; then set `SDKROOT` as
-described in [Build notes](#build-notes) instead.
-
-**Install the Python libraries** for the interpreter CMake will build against. Homebrew's
-Pythons are externally managed, so either use a virtual environment or `pip install --user`:
-
-```ShellSession
-BREW=$(brew --prefix)
-"$BREW/opt/python@3.11/bin/python3.11" -m venv ~/alps-venv
-~/alps-venv/bin/pip install numpy scipy
-```
-
-Then pin that interpreter with `-DPython3_EXECUTABLE=$HOME/alps-venv/bin/python`.
 
 > **Do not install Boost via Homebrew.** ALPS must compile Boost from source instead —
 > see [Boost Error Details](#boost-error-details) in Troubleshooting for why, and how to build offline.
 
-⚠ **Caution — environments.** Any environment (a Python virtual environment, `micromamba`,
-conda) changes which Python and libraries CMake finds, so the `cmake` command in
-[Download and Build](#download-and-build) has to name them explicitly. A conda environment
-also has a known Boost/Python ABI problem — see [Common Errors](#common-errors).
+⚠ **Caution — environments.** When using any type of environment (e.g. a Python virtual
+environment, `micromamba`, conda) it changes which Python and libraries CMake finds, so the
+`cmake` command in [Download and Build](#download-and-build) has to be adapted — see
+[the no-root guide](/codes/install/no_root_guide.pdf). A conda environment has a
+known Boost/Python ABI problem — see [Common Errors](#common-errors).
 </details>
 
 <details>
@@ -266,19 +218,17 @@ sudo port install python311 py311-numpy py311-scipy
 sudo port select --set python3 python311
 ```
 
-MacPorts installs under `/opt/local`, which is root-owned — unlike Homebrew, every `port
-install` needs `sudo`. The interpreter to pin at configure time is `/opt/local/bin/python3`.
-
 > **Do not install `openmpi-clang20` without checking your compiler.** See
 > [Other Error Details](#other-error-details) in Troubleshooting for how to pick the right OpenMPI variant.
 
 > **Do not install Boost via MacPorts.** ALPS must compile Boost from source instead —
 > see [Boost Error Details](#boost-error-details) in Troubleshooting for why, and how to build offline.
 
-⚠ **Caution — environments.** Any environment (a Python virtual environment, `micromamba`,
-conda) changes which Python and libraries CMake finds, so the `cmake` command in
-[Download and Build](#download-and-build) has to name them explicitly. A conda environment
-also has a known Boost/Python ABI problem — see [Common Errors](#common-errors).
+⚠ **Caution — environments.** When using any type of environment (e.g. a Python virtual
+environment, `micromamba`, conda) it changes which Python and libraries CMake finds, so the
+`cmake` command in [Download and Build](#download-and-build) has to be adapted — see
+[the no-root guide](/codes/install/no_root_guide.pdf). A conda environment has a
+known Boost/Python ABI problem — see [Common Errors](#common-errors).
 </details>
 </details>
 
@@ -296,9 +246,7 @@ module load gcc/12 hdf5 openmpi openblas   # names vary by site
 
 Confirm the loaded compiler meets the 10.5.0 minimum and that `mpicc`, `mpirun` and the HDF5
 headers are on the path. If a module supplies HDF5 in a non-standard location, note the value
-of `$HDF5_DIR` — you will need to pass it as `-DHDF5_ROOT=$HDF5_DIR
--DHDF5_NO_FIND_PACKAGE_CONFIG_FILE=ON`, otherwise CMake may silently prefer a config file
-found elsewhere and use the system HDF5.
+of `$HDF5_DIR`.
 
 > **Prefer the site MPI over any other.** A cluster's OpenMPI module is built against its
 > interconnect (InfiniBand/UCX). A generic MPI from an environment manager will fall back to
@@ -368,11 +316,6 @@ In the snippet below, replace `</path/to/install/dir>` with the directory where 
 >        -DBOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF"
 > ```
 
-> **Dependencies outside the default search path?** If they came from a prefix you own
-> rather than from the package manager, CMake needs to be told where each one is. The
-> flags for every such route — cluster modules, micromamba, unpacked packages, a Homebrew
-> prefix plus a venv — are collected in
-> <a class="alps-download" href="/codes/install/no_root_guide.pdf" data-filename="no_root_guide.pdf" target="_blank" rel="noopener">`no_root_guide.pdf`</a>.
 
 ### Troubleshooting
 
