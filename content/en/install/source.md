@@ -18,6 +18,7 @@ Choose **one** MPI and **one** BLAS provider that fit your system:
 | Dependency | Minimum version | Debian / Ubuntu (`apt`) | Rocky / RHEL (`dnf`) |
 |----------|--------------------|---------------------------|---------------------------|
 | HDF5     | 1.10.0 | `libhdf5-dev` | `hdf5-devel` |
+| CMake    | 3.18 | `cmake` | `cmake` |
 | C++ Compiler | GCC 10.5.0 & Clang 13.0.1 | `build-essential` | `gcc gcc-c++ make` |
 | Fortran Compiler | *(any; needed for LAPACK detection)* | `gfortran` | `gcc-gfortran` |
 | Boost | 1.76 <br>*(1.87 required to build ALPS Python bindings against NumPy ≥ 2.0)* | see below | see below |
@@ -80,7 +81,7 @@ outside a prefix you have approved, so you stay in control of each step.
 
 ```ShellSession
 sudo apt update
-sudo apt install build-essential \
+sudo apt install build-essential cmake \
                    libhdf5-dev \
                    libopenblas-dev \
                    libopenmpi-dev openmpi-bin # or: libmpich-dev mpich
@@ -93,6 +94,14 @@ python3 -m pip install numpy scipy
 
 > **Do not install Boost via `apt`.** ALPS must compile Boost from source instead —
 > see [Boost Error Details](#boost-error-details) in Troubleshooting for why, and how to build offline.
+
+⚠ **Caution — virtual environments.** Any environment (a Python virtual environment,
+`micromamba`, conda) changes which Python and libraries CMake finds. The `cmake` command in
+[Download and Build](#download-and-build) then needs custom flags naming them — without those
+the build picks up the wrong interpreter and fails. See
+[the no-root guide](/codes/install/no_root_guide.pdf) for the flags each kind of environment
+needs; a conda environment also has a known Boost/Python ABI problem — see
+[Common Errors](#common-errors).
 </details>
 
 <details>
@@ -116,7 +125,7 @@ sudo dnf makecache
 
 ```ShellSession
 sudo dnf install -y \
-    gcc gcc-c++ gcc-gfortran make git \
+    gcc gcc-c++ gcc-gfortran make cmake git \
     hdf5 hdf5-devel \
     openblas openblas-devel \
     openmpi openmpi-devel \
@@ -129,14 +138,14 @@ sudo dnf install -y \
 ```ShellSession
 sudo dnf install -y \
     gcc-toolset-14 gcc-toolset-14-gcc-c++ gcc-toolset-14-gcc-gfortran \
-    make git \
+    make cmake git \
     hdf5 hdf5-devel \
     openblas openblas-devel \
     openmpi openmpi-devel \
     environment-modules \
     python3.11 python3.11-devel python3.11-numpy python3.11-scipy
 
-source /opt/rh/gcc-toolset-14/enable   # per shell; add to ~/.bashrc
+source /opt/rh/gcc-toolset-14/enable   # per shell; add to ~/.bashrc and any job script
 gcc --version                          # 14.x
 ```
 
@@ -145,25 +154,25 @@ than in `/usr/bin`, so `mpicc` and `mpirun` do not exist until you load it:
 
 ```ShellSession
 source /etc/profile.d/modules.sh
-module load mpi/openmpi-x86_64
+module load mpi/openmpi-x86_64         # per shell; add to ~/.bashrc and any job script
 mpirun --version                       # Open MPI >= 4.1
 ```
 
-> **A Fortran compiler is required.** OpenBLAS provides LAPACK, whose CMake detection
-> compiles a Fortran test program. Without `gcc-gfortran` (or
-> `gcc-toolset-14-gcc-gfortran` on Rocky 8) configuration fails at the BLAS/LAPACK check.
-
-> **Rocky 8: use `gcc-toolset-14`, not a lower number.** On Rocky 8 the `gcc-toolset-11`
-> through `-13` packages are metapackage stubs that contain no working `gcc`/`g++`, and none
-> of them ship `gfortran`. Only `gcc-toolset-14` and `-15` provide a complete toolchain.
-
-> **`module load` and `source .../enable` are per-shell.** Add both lines to `~/.bashrc` and
-> to any Slurm/PBS job script — a job that runs in a different environment than the build will
-> fail at load time on missing `.so` files.
+> **Rocky 8: use `gcc-toolset-14`, not a lower number.** The `gcc-toolset-11` through `-13`
+> packages are metapackage stubs that contain no working `gcc`/`g++`, and none of them ship
+> `gfortran` — which OpenBLAS needs, since CMake detects LAPACK by compiling a Fortran probe.
 
 > **Do not install `boost-devel`.** ALPS must compile Boost from source instead — if a system
 > Boost is present CMake will find it and the build fails with `boost::filesystem` /
 > `auto_ptr` errors. See [Boost Error Details](#boost-error-details) in Troubleshooting.
+
+⚠ **Caution — virtual environments.** Any environment (a Python virtual environment,
+`micromamba`, conda) changes which Python and libraries CMake finds. The `cmake` command in
+[Download and Build](#download-and-build) then needs custom flags naming them — without those
+the build picks up the wrong interpreter and fails. See
+[the no-root guide](/codes/install/no_root_guide.pdf) for the flags each kind of environment
+needs; a conda environment also has a known Boost/Python ABI problem — see
+[Common Errors](#common-errors).
 </details>
 
 </details>
@@ -174,29 +183,25 @@ mpirun --version                       # Open MPI >= 4.1
 <details>
 <summary><strong> Homebrew</strong> </summary>
 
-Homebrew writes to `/opt/homebrew` (Apple Silicon) or `/usr/local` (Intel), both owned by
-your user, so none of this needs root. Only the Xcode Command Line Tools use a GUI
-installer:
-
-```ShellSession
-xcode-select --install
-```
-
 ```ShellSession
 brew update
-brew install hdf5 \
-               openblas open-mpi \
-               python@3.11 # or: mpich
+brew install cmake hdf5 \
+               openblas open-mpi # or: mpich
+
+# install Python libs:
+pip3 install numpy scipy
 ```
 
 > **Do not install Boost via Homebrew.** ALPS must compile Boost from source instead —
 > see [Boost Error Details](#boost-error-details) in Troubleshooting for why, and how to build offline.
 
-⚠ **Caution — environments.** When using any type of environment (e.g. a Python virtual
-environment, `micromamba`, conda) it changes which Python and libraries CMake finds, so the
-`cmake` command in [Download and Build](#download-and-build) has to be adapted — see
-[the no-root guide](/codes/install/no_root_guide.pdf). A conda environment has a
-known Boost/Python ABI problem — see [Common Errors](#common-errors).
+⚠ **Caution — virtual environments.** Any environment (a Python virtual environment,
+`micromamba`, conda) changes which Python and libraries CMake finds. The `cmake` command in
+[Download and Build](#download-and-build) then needs custom flags naming them — without those
+the build picks up the wrong interpreter and fails. See
+[the no-root guide](/codes/install/no_root_guide.pdf) for the flags each kind of environment
+needs; a conda environment also has a known Boost/Python ABI problem — see
+[Common Errors](#common-errors).
 </details>
 
 <details>
@@ -204,15 +209,14 @@ known Boost/Python ABI problem — see [Common Errors](#common-errors).
 
 ```ShellSession
 sudo port selfupdate
-sudo port install \
+sudo port install cmake \
                    hdf5 \
                    OpenBLAS \
                    openmpi-clang20   # see note below about choosing a variant
 sudo port select --set mpi openmpi-clang20-fortran
 
-# install Python libs from MacPorts, matching the Python you will build against:
-sudo port install python311 py311-numpy py311-scipy
-sudo port select --set python3 python311
+# install Python libs:
+pip3 install numpy scipy
 ```
 
 > **Do not install `openmpi-clang20` without checking your compiler.** See
@@ -221,11 +225,13 @@ sudo port select --set python3 python311
 > **Do not install Boost via MacPorts.** ALPS must compile Boost from source instead —
 > see [Boost Error Details](#boost-error-details) in Troubleshooting for why, and how to build offline.
 
-⚠ **Caution — environments.** When using any type of environment (e.g. a Python virtual
-environment, `micromamba`, conda) it changes which Python and libraries CMake finds, so the
-`cmake` command in [Download and Build](#download-and-build) has to be adapted — see
-[the no-root guide](/codes/install/no_root_guide.pdf). A conda environment has a
-known Boost/Python ABI problem — see [Common Errors](#common-errors).
+⚠ **Caution — virtual environments.** Any environment (a Python virtual environment,
+`micromamba`, conda) changes which Python and libraries CMake finds. The `cmake` command in
+[Download and Build](#download-and-build) then needs custom flags naming them — without those
+the build picks up the wrong interpreter and fails. See
+[the no-root guide](/codes/install/no_root_guide.pdf) for the flags each kind of environment
+needs; a conda environment also has a known Boost/Python ABI problem — see
+[Common Errors](#common-errors).
 </details>
 </details>
 
