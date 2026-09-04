@@ -15,33 +15,42 @@ For most cases, it is preferred to [install ALPS from Binaries](../binary). Howe
 ALPS relies on a handful of external libraries. 
 Choose **one** MPI and **one** BLAS provider that fit your system:
 
-| Dependency | Minimum version | Debian / Ubuntu (`apt`) | Rocky / RHEL (`dnf`) |
-|----------|--------------------|---------------------------|---------------------------|
-| HDF5     | 1.10.0 | `libhdf5-dev` | `hdf5-devel` |
-| C++ Compiler | GCC 10.5.0 & Clang 13.0.1 | `build-essential` | `gcc gcc-c++ make` |
-| Fortran Compiler | *(any; needed for LAPACK detection)* | `gfortran` | `gcc-gfortran` |
-| Boost | 1.76 <br>*(1.87 required to build ALPS Python bindings against NumPy ≥ 2.0)* | see below | see below |
-| MPI | OpenMPI 4.0 **or** MPICH 4.0 | `libopenmpi-dev` / `libmpich-dev` | `openmpi-devel` / `mpich-devel` |
-| BLAS | 0.3 | `libopenblas-dev` | `openblas-devel` |
-| Python | 3.9 | [python.org](https://www.python.org/) | [python.org](https://www.python.org/) |
+| Dependency | Minimum version | Debian / Ubuntu (`apt`) | Rocky / RHEL (`dnf`) | macOS (`brew`) |
+|----------|--------------------|---------------------------|---------------------------|------------------|
+| HDF5     | 1.10.0 | `libhdf5-dev` | `hdf5-devel` | `hdf5` |
+| C++ Compiler | GCC 10.5.0 & Clang 13.0.1 | `build-essential` | `gcc gcc-c++ make` | Xcode CLT |
+| Fortran Compiler | *(any; needed for LAPACK detection)* | `gfortran` | `gcc-gfortran` | `gcc` |
+| Boost | 1.76 <br>*(1.87 required to build ALPS Python bindings against NumPy ≥ 2.0)* | see below | see below | see below |
+| MPI | OpenMPI 4.0 **or** MPICH 4.0 | `libopenmpi-dev` / `libmpich-dev` | `openmpi-devel` / `mpich-devel` | `open-mpi` / `mpich` |
+| BLAS | 0.3 | `libopenblas-dev` | `openblas-devel` | `openblas` |
+| Python | 3.9 | [python.org](https://www.python.org/) | [python.org](https://www.python.org/) | `python@3.11` |
 
+> **No root access?** Every route below installs packages system-wide. If you cannot,
+> the dependencies have to come from a prefix you own instead, and the `cmake` command
+> changes with them. That procedure is kept in a separate guide rather than on this page:
+> <a class="alps-download" href="/codes/install/no_root_guide.pdf" data-filename="no_root_guide.pdf" target="_blank" rel="noopener">`no_root_guide.pdf`</a>
+> — Ubuntu, Rocky Linux and macOS, each with a micromamba route and a package-unpacking
+> fallback, and the configure flags each one needs.
 
 <details id="assisted-install" class="install-section">
 <summary><strong>Install with agent (optional)</strong></summary>
 
-If you use a command-line coding agent, the instruction file below can drive the whole
-install: it probes your system, asks whether you have root, and picks a route for you.
-The agent is instructed to follow the directions below. **Note: it is inherently safer to create an environment your agent can work in or to revoke its root access.**
+If you use a command-line coding agent, the two files below can drive the whole
+install: they probe your system, ask whether you have root, and pick a route for you.
+The agent is instructed to follow the directions in them. **Note: it is inherently safer to create an environment your agent can work in or to revoke its root access.**
 
-**1. Download the instruction file.**
-<a class="alps-download" href="/codes/install/alps-install-agent.md" data-filename="alps-install-agent.md" target="_blank" rel="noopener">`alps-install-agent.md`</a>
-It is convenient to save the file to the folder you'll be working in.
+**1. Download the instruction files.**
 
-**2. Hand it to your agent.** Start the agent in the directory where you saved the file (or provide the path) and
-give it the file plus your intent:
+* <a class="alps-download" href="/codes/install/alps-install-agent.md" data-filename="alps-install-agent.md" target="_blank" rel="noopener">`alps-install-agent.md`</a> — the procedure the agent follows.
+* <a class="alps-download" href="/codes/install/no_root_guide.pdf" data-filename="no_root_guide.pdf" target="_blank" rel="noopener">`no_root_guide.pdf`</a> — the per-system reference it consults when you answer that you have no root.
+
+It is convenient to save both to the folder you'll be working in.
+
+**2. Hand them to your agent.** Start the agent in the directory where you saved the files (or provide the paths) and
+give it the files plus your intent:
 
 ```ShellSession
-claude "Read alps-install-agent.md and install ALPS following it."
+claude "Read alps-install-agent.md and no_root_guide.pdf and install ALPS following them."
 ```
 
 The file tells the agent to stop and ask before anything that downloads, builds, or writes
@@ -56,9 +65,8 @@ outside a prefix you have approved, so you stay in control of each step.
 2. **Probe the system** — compiler and Python versions, whether the Python headers are
    present, HDF5 and MPI, `module avail`, free space in `$HOME`. It checks whether each tool
    is *usable*, not merely installed.
-3. **Recommend a route** and show you the probe lines that decided it — system packages if you
-   have root, otherwise cluster modules, a package-unpacking prefix, or a `micromamba`
-   environment.
+3. **Recommend a route** and show you the probe lines that decided it — the system packages
+   on this page if you have root, otherwise one of the routes in `no_root_guide.pdf`.
 4. **Configure, build, verify** — ending with a 2-D Ising run whose result it checks. It
    asks first whether to keep the run in an `ising_results/` directory or just print the
    numbers, and offers to plot |M| vs T (asking before installing `matplotlib` if you do
@@ -71,134 +79,54 @@ outside a prefix you have approved, so you stay in control of each step.
 
 </details>
 
-<details id="deps-ubuntu" class="install-section">
-<summary><strong>Install on Ubuntu / Debian / WSL</strong></summary>
+<details id="deps-linux" class="install-section">
+<summary><strong>Install on Linux</strong></summary>
 
 <details>
-<summary><strong>With root access</strong> </summary>
+<summary><strong> Ubuntu / Debian / WSL</strong> </summary>
+
+**Install the dependencies:**
 
 ```ShellSession
 sudo apt update
-sudo apt install build-essential \
+sudo apt install build-essential gfortran cmake git \
                    libhdf5-dev \
                    libopenblas-dev \
                    libopenmpi-dev openmpi-bin # or: libmpich-dev mpich
-
-# install Python libs:
-pip install numpy scipy # python libraries 
-# or 
-python3 -m pip install numpy scipy
 ```
+
+**Install the Python libraries** for the interpreter CMake will build against:
+
+```ShellSession
+sudo apt install python3-dev python3-numpy python3-scipy
+```
+
+On 23.04 and later `pip install numpy scipy` into the system Python is refused
+(`externally-managed-environment`). Either use the `python3-*` packages above, or create a
+virtual environment and pass it to CMake with `-DPython3_EXECUTABLE=`.
+
+**Check what your release ships.** The C++ compiler is the one dependency `apt` may not be
+able to satisfy:
+
+| Release | Default GCC | Verdict |
+|---|---|---|
+| 20.04 | 9 | Below the 10.5.0 minimum — `sudo apt install gcc-11 g++-11 gfortran-11` and pass `-DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11 -DCMAKE_Fortran_COMPILER=gfortran-11` |
+| 22.04 | 11 | Fine as-is |
+| 24.04 | 13 | Fine as-is; ships NumPy 2, which is why CMake fetches Boost 1.87 |
+
+**Put the results on the `PATH`.** Nothing further is needed — `apt` installs MPI into
+`/usr/bin`, so `mpicc` and `mpirun` work in any shell.
+
+> **A Fortran compiler is required.** OpenBLAS provides LAPACK, whose CMake detection
+> compiles a Fortran test program. Without `gfortran` configuration fails at the
+> BLAS/LAPACK check.
 
 > **Do not install Boost via `apt`.** ALPS must compile Boost from source instead —
 > see [Boost Error Details](#boost-error-details) in Troubleshooting for why, and how to build offline.
 </details>
 
 <details>
-<summary><strong>Without root access</strong> </summary>
-
-**Using `micromamba`**:
-
-micromamba is a single static binary that installs nothing system-wide. This route supplies
-the compiler as well as the libraries, which is what makes it work on hosts whose system GCC
-and Python are too old (Rocky 8 ships GCC 8.5 and Python 3.6.8; ALPS needs 10.5 and 3.9).
-
-⚠ **Caution — environment and path caveats.** Installing dependencies outside the default
-search paths means the `cmake` command in [Download and Build](#download-and-build) has to be
-adapted — see [Configure without root access](#configuring-without-root-access) there for the
-flags each kind of installation needs.
-
-**Install micromamba and create the environment:**
-
-```ShellSession
-mkdir -p "$HOME/bin" "$HOME/src" && cd "$HOME/bin"
-curl -L -o micromamba \
-  https://github.com/mamba-org/micromamba-releases/releases/latest/download/micromamba-linux-64
-chmod +x micromamba
-
-export MAMBA_ROOT_PREFIX=$HOME/micromamba
-$HOME/bin/micromamba create -y -n alps -c conda-forge \
-    gcc_linux-64=12 gxx_linux-64=12 gfortran_linux-64=12 \
-    cmake make \
-    hdf5 openblas \
-    openmpi \
-    python=3.11 numpy scipy
-```
-
-**Pin CMake below 4:**
-
-```ShellSession
-$HOME/bin/micromamba install -y -n alps -c conda-forge 'cmake>=3.24,<4'
-```
-
-> **The `<4` pin is an environment problem only.** conda-forge resolves CMake 4.x, which
-> removed the pre-3.5 policies the Boost super-build still declares. A system CMake needs
-> no pin — Rocky 8's 3.26 and Ubuntu 22.04's 3.22 are both fine.
-
-**Write an environment script** and source it before every build *and* every run — save as
-`~/alps-env.sh`:
-
-```ShellSession
-export MAMBA_ROOT_PREFIX=$HOME/micromamba
-eval "$("$HOME/bin/micromamba" shell hook -s bash)"
-micromamba activate alps
-
-export ALPS_PREFIX=$HOME/opt/alps
-export CC=$(which x86_64-conda-linux-gnu-gcc)
-export CXX=$(which x86_64-conda-linux-gnu-g++)
-export FC=$(which x86_64-conda-linux-gnu-gfortran)
-
-if [ -f "$ALPS_PREFIX/bin/alpsvars.sh" ]; then
-    source "$ALPS_PREFIX/bin/alpsvars.sh"
-    # alpsvars.sh points PYTHONPATH at $ALPS_PREFIX/lib, but pyalps installs to
-    # lib/python3.11/site-packages -- correct it:
-    export PYTHONPATH="$ALPS_PREFIX/lib/python3.11/site-packages:$PYTHONPATH"
-    export LD_LIBRARY_PATH="$ALPS_PREFIX/lib:$LD_LIBRARY_PATH"
-fi
-```
-
-Source `~/alps-env.sh` in every shell that builds or runs ALPS.
-
-**Or by extracting `.deb` packages.**
-
-`apt-get download` fetches a `.deb` from an enabled apt source into the current directory.
-`dpkg-deb -x` extracts its contents into a directory you name:
-
-```ShellSession
-mkdir -p "$HOME/debs" "$HOME/opt/deps" && cd "$HOME/debs"
-
-apt-get download \
-    libhdf5-dev libhdf5-103 \
-    libopenblas-dev libopenblas0-pthread \
-    libopenmpi-dev libopenmpi3 openmpi-bin openmpi-common \
-    libgfortran5
-
-for f in *.deb; do dpkg-deb -x "$f" "$HOME/opt/deps"; done
-```
-
-Then point the build at the unpacked tree:
-
-```ShellSession
-export DEPS_PREFIX=$HOME/opt/deps
-export PATH=$DEPS_PREFIX/usr/bin:$PATH
-export LD_LIBRARY_PATH=$DEPS_PREFIX/usr/lib/x86_64-linux-gnu:$DEPS_PREFIX/usr/lib:$LD_LIBRARY_PATH
-export CMAKE_PREFIX_PATH=$DEPS_PREFIX/usr:$CMAKE_PREFIX_PATH
-export HDF5_ROOT=$DEPS_PREFIX/usr
-```
-
-> **Treat this as a last resort.** There is no dependency resolution, and some `.deb` files
-> hardcode `/usr` paths in their CMake and `.pc` files which you must patch by hand. You also
-> still need a compiler ≥ GCC 10.5 — Ubuntu 20.04 ships GCC 9, so you would have to unpack
-> `gcc-11 g++-11 gfortran-11 cpp-11 libstdc++-11-dev` as well, or fall back to `micromamba`.
-</details>
-
-</details>
-
-<details id="deps-rocky" class="install-section">
-<summary><strong>Install on Rocky Linux / RHEL / AlmaLinux</strong></summary>
-
-<details>
-<summary><strong>With root access</strong> </summary>
+<summary><strong> Rocky Linux / RHEL / AlmaLinux</strong> </summary>
 
 Package names on RHEL-family systems follow a different convention from Debian's: development
 headers carry a `-devel` suffix instead of a `lib...-dev` name, and there is no `build-essential`
@@ -221,7 +149,7 @@ sudo dnf makecache
 
 ```ShellSession
 sudo dnf install -y \
-    gcc gcc-c++ gcc-gfortran make git \
+    gcc gcc-c++ gcc-gfortran make cmake git \
     hdf5 hdf5-devel \
     openblas openblas-devel \
     openmpi openmpi-devel \
@@ -234,7 +162,7 @@ sudo dnf install -y \
 ```ShellSession
 sudo dnf install -y \
     gcc-toolset-14 gcc-toolset-14-gcc-c++ gcc-toolset-14-gcc-gfortran \
-    make git \
+    make cmake git \
     hdf5 hdf5-devel \
     openblas openblas-devel \
     openmpi openmpi-devel \
@@ -266,108 +194,12 @@ mpirun --version                       # Open MPI >= 4.1
 > to any Slurm/PBS job script — a job that runs in a different environment than the build will
 > fail at load time on missing `.so` files.
 
+> **Prefer a threaded BLAS if you have one.** `openblas-threads` and `openblas-openmp`
+> (with their `-devel` packages) are drop-in replacements for plain `openblas-devel`.
+
 > **Do not install `boost-devel`.** ALPS must compile Boost from source instead — if a system
 > Boost is present CMake will find it and the build fails with `boost::filesystem` /
 > `auto_ptr` errors. See [Boost Error Details](#boost-error-details) in Troubleshooting.
-</details>
-
-<details>
-<summary><strong>Without root access</strong> </summary>
-
-`dnf download` fetches the `.rpm` files into the current directory. `rpm2cpio` converts each
-to a cpio stream and `cpio -idmu` extracts it, reproducing the package's `usr/` tree, which
-you then copy into your prefix:
-
-```ShellSession
-export DEPS_PREFIX=$HOME/opt/deps
-mkdir -p "$DEPS_PREFIX" "$HOME/opt/deps-rpms" "$HOME/opt/deps-stage"
-
-cd "$HOME/opt/deps-rpms"
-dnf download openblas openblas-devel \
-             python3.11 python3.11-libs python3.11-devel \
-             python3.11-numpy python3.11-scipy
-
-cd "$HOME/opt/deps-stage"
-for r in "$HOME"/opt/deps-rpms/*.rpm; do rpm2cpio "$r" | cpio -idmu --quiet; done
-cp -a usr/. "$DEPS_PREFIX/"
-```
-
-> **Do not unpack `hdf5-devel` or `openmpi`.** The distro HDF5 is 1.10.5, too old — it trips
-> ALPS's teardown check and fails 8 tests; build HDF5 ≥ 1.14 from source instead. The
-> `openmpi` RPM pulls `hwloc`, `pmix`, `ucx`, `libfabric` and `munge`, none present on a
-> stock Rocky 8, so build OpenMPI from source too. Full commands are in the
-> [agent instruction file](#assisted-install).
-
-> **Never export `PYTHONHOME`.** It forces *every* Python in the shell — including the system
-> 3.6 that `dnf` depends on — to look for its stdlib in your prefix, and `dnf` then dies with
-> `No module named 'encodings'`. Call the unpacked interpreter by its own path instead:
-> `$DEPS_PREFIX/bin/python3.11` self-locates correctly.
-
-> **Rocky 8 needs a newer compiler.** `source /opt/rh/gcc-toolset-14/enable` (per shell, no
-> root required). Toolsets 11–13 are often empty stubs — check for a real
-> `root/usr/bin/g++`..
-
-**Or with `micromamba`**, if you would rather not unpack packages by hand:
-
-micromamba is a single static binary that installs nothing system-wide. This route supplies
-the compiler as well as the libraries, which is what makes it work on hosts whose system GCC
-and Python are too old (Rocky 8 ships GCC 8.5 and Python 3.6.8; ALPS needs 10.5 and 3.9).
-
-⚠ **Caution — environment and path caveats.** Installing dependencies outside the default
-search paths means the `cmake` command in [Download and Build](#download-and-build) has to be
-adapted — see [Configure without root access](#configuring-without-root-access) there for the
-flags each kind of installation needs.
-
-**Install micromamba and create the environment:**
-
-```ShellSession
-mkdir -p "$HOME/bin" "$HOME/src" && cd "$HOME/bin"
-curl -L -o micromamba \
-  https://github.com/mamba-org/micromamba-releases/releases/latest/download/micromamba-linux-64
-chmod +x micromamba
-
-export MAMBA_ROOT_PREFIX=$HOME/micromamba
-$HOME/bin/micromamba create -y -n alps -c conda-forge \
-    gcc_linux-64=12 gxx_linux-64=12 gfortran_linux-64=12 \
-    cmake make \
-    hdf5 openblas \
-    openmpi \
-    python=3.11 numpy scipy
-```
-
-**Pin CMake below 4:**
-
-```ShellSession
-$HOME/bin/micromamba install -y -n alps -c conda-forge 'cmake>=3.24,<4'
-```
-
-> **The `<4` pin is an environment problem only.** conda-forge resolves CMake 4.x, which
-> removed the pre-3.5 policies the Boost super-build still declares. A system CMake needs
-> no pin — Rocky 8's 3.26 and Ubuntu 22.04's 3.22 are both fine.
-
-**Write an environment script** and source it before every build *and* every run — save as
-`~/alps-env.sh`:
-
-```ShellSession
-export MAMBA_ROOT_PREFIX=$HOME/micromamba
-eval "$("$HOME/bin/micromamba" shell hook -s bash)"
-micromamba activate alps
-
-export ALPS_PREFIX=$HOME/opt/alps
-export CC=$(which x86_64-conda-linux-gnu-gcc)
-export CXX=$(which x86_64-conda-linux-gnu-g++)
-export FC=$(which x86_64-conda-linux-gnu-gfortran)
-
-if [ -f "$ALPS_PREFIX/bin/alpsvars.sh" ]; then
-    source "$ALPS_PREFIX/bin/alpsvars.sh"
-    # alpsvars.sh points PYTHONPATH at $ALPS_PREFIX/lib, but pyalps installs to
-    # lib/python3.11/site-packages -- correct it:
-    export PYTHONPATH="$ALPS_PREFIX/lib/python3.11/site-packages:$PYTHONPATH"
-    export LD_LIBRARY_PATH="$ALPS_PREFIX/lib:$LD_LIBRARY_PATH"
-fi
-```
-
-Source `~/alps-env.sh` in every shell that builds or runs ALPS.
 </details>
 
 </details>
@@ -389,18 +221,33 @@ xcode-select --install
 ```ShellSession
 brew update
 brew install hdf5 \
-               openblas open-mpi \
+               openblas open-mpi libomp \
                python@3.11 # or: mpich
 ```
+
+**`libomp` supplies OpenMP.** Apple's Clang ships without an OpenMP runtime, so pass
+`-DOpenMP_ROOT="$(brew --prefix libomp)"` at configure time. If you would rather use a real
+GCC, `brew install gcc` provides `gcc-14`/`g++-14`/`gfortran-14`; then set `SDKROOT` as
+described in [Build notes](#build-notes) instead.
+
+**Install the Python libraries** for the interpreter CMake will build against. Homebrew's
+Pythons are externally managed, so either use a virtual environment or `pip install --user`:
+
+```ShellSession
+BREW=$(brew --prefix)
+"$BREW/opt/python@3.11/bin/python3.11" -m venv ~/alps-venv
+~/alps-venv/bin/pip install numpy scipy
+```
+
+Then pin that interpreter with `-DPython3_EXECUTABLE=$HOME/alps-venv/bin/python`.
 
 > **Do not install Boost via Homebrew.** ALPS must compile Boost from source instead —
 > see [Boost Error Details](#boost-error-details) in Troubleshooting for why, and how to build offline.
 
-⚠ **Caution — environments.** When using any type of environment (e.g. a Python virtual
-environment, `micromamba`, conda) it changes which Python and libraries CMake finds, so the
-`cmake` command in [Download and Build](#download-and-build) has to be adapted — see
-[Configure without root access](#configuring-without-root-access). A conda environment has a
-known Boost/Python ABI problem — see [Common Errors](#common-errors).
+⚠ **Caution — environments.** Any environment (a Python virtual environment, `micromamba`,
+conda) changes which Python and libraries CMake finds, so the `cmake` command in
+[Download and Build](#download-and-build) has to name them explicitly. A conda environment
+also has a known Boost/Python ABI problem — see [Common Errors](#common-errors).
 </details>
 
 <details>
@@ -419,17 +266,19 @@ sudo port install python311 py311-numpy py311-scipy
 sudo port select --set python3 python311
 ```
 
+MacPorts installs under `/opt/local`, which is root-owned — unlike Homebrew, every `port
+install` needs `sudo`. The interpreter to pin at configure time is `/opt/local/bin/python3`.
+
 > **Do not install `openmpi-clang20` without checking your compiler.** See
 > [Other Error Details](#other-error-details) in Troubleshooting for how to pick the right OpenMPI variant.
 
 > **Do not install Boost via MacPorts.** ALPS must compile Boost from source instead —
 > see [Boost Error Details](#boost-error-details) in Troubleshooting for why, and how to build offline.
 
-⚠ **Caution — environments.** When using any type of environment (e.g. a Python virtual
-environment, `micromamba`, conda) it changes which Python and libraries CMake finds, so the
-`cmake` command in [Download and Build](#download-and-build) has to be adapted — see
-[Configure without root access](#configuring-without-root-access). A conda environment has a
-known Boost/Python ABI problem — see [Common Errors](#common-errors).
+⚠ **Caution — environments.** Any environment (a Python virtual environment, `micromamba`,
+conda) changes which Python and libraries CMake finds, so the `cmake` command in
+[Download and Build](#download-and-build) has to name them explicitly. A conda environment
+also has a known Boost/Python ABI problem — see [Common Errors](#common-errors).
 </details>
 </details>
 
@@ -447,7 +296,9 @@ module load gcc/12 hdf5 openmpi openblas   # names vary by site
 
 Confirm the loaded compiler meets the 10.5.0 minimum and that `mpicc`, `mpirun` and the HDF5
 headers are on the path. If a module supplies HDF5 in a non-standard location, note the value
-of `$HDF5_DIR`.
+of `$HDF5_DIR` — you will need to pass it as `-DHDF5_ROOT=$HDF5_DIR
+-DHDF5_NO_FIND_PACKAGE_CONFIG_FILE=ON`, otherwise CMake may silently prefer a config file
+found elsewhere and use the system HDF5.
 
 > **Prefer the site MPI over any other.** A cluster's OpenMPI module is built against its
 > interconnect (InfiniBand/UCX). A generic MPI from an environment manager will fall back to
@@ -517,129 +368,11 @@ In the snippet below, replace `</path/to/install/dir>` with the directory where 
 >        -DBOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF"
 > ```
 
-
-<details id="configuring-without-root-access" class="install-section">
-<summary><strong>Configure without root access</strong></summary>
-
-The command above assumes CMake finds every dependency on the default search path. If you
-installed them under [Install Required Dependencies](#install-required-dependencies), add
-the flags for the route you took. Everything else — the Boost flags, `--build`, `--install` —
-is unchanged.
-
-<br>
-
-<details>
-<summary><strong> From cluster environment modules</strong> </summary>
-
-The modules put the compiler and MPI on the path already. Only HDF5 usually needs pointing
-at, using the `$HDF5_DIR` you noted when loading the module:
-
-```ShellSession
-cmake -S alps-src -B alps-build                                       \
-       -DCMAKE_INSTALL_PREFIX=$HOME/opt/alps                          \
-       -DHDF5_ROOT=$HDF5_DIR                                          \
-       -DHDF5_NO_FIND_PACKAGE_CONFIG_FILE=ON                          \
-       -DPython3_EXECUTABLE=$(command -v python3)                     \
-       -DCMAKE_CXX_FLAGS="-DBOOST_NO_AUTO_PTR                         \
-       -DBOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF"
-```
-
-> **`-DHDF5_NO_FIND_PACKAGE_CONFIG_FILE=ON` is what makes `HDF5_ROOT` stick.** Without it
-> CMake may still prefer a config file found elsewhere and silently use the system HDF5.
-</details>
-
-<details>
-<summary><strong> From a micromamba environment</strong> </summary>
-
-Source the environment script first, then point `CMAKE_PREFIX_PATH` at the environment so
-every dependency resolves inside it rather than under `/usr`:
-
-```ShellSession
-source ~/alps-env.sh
-
-cmake -S alps-src -B alps-build                                       \
-       -DCMAKE_BUILD_TYPE=Release                                     \
-       -DCMAKE_INSTALL_PREFIX="$ALPS_PREFIX"                          \
-       -DCMAKE_PREFIX_PATH="$CONDA_PREFIX"                            \
-       -DPython3_EXECUTABLE="$(python -c 'import sys; print(sys.executable)')" \
-       -DCMAKE_CXX_FLAGS="-DBOOST_NO_AUTO_PTR                         \
-       -DBOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF"
-```
-
-Check the configure summary before building — every line should land in the environment:
-
-```
--- Python interpreter .../envs/alps/bin/python3.11 (3.11.16)
--- Found MPI_CXX: .../envs/alps/lib/libmpi.so (version 3.1)
--- Found BLAS: .../envs/alps/lib/libopenblas.so
--- Found HDF5: hdf5-shared (found version "1.14.6") components: C HL
-```
-
-> **The environment must be active at run time too, not just at build time.** A build
-> configured with the environment active and run without it fails on missing shared
-> libraries.
-</details>
-
-<details>
-<summary><strong> From a user prefix (unpacked packages)</strong> </summary>
-
-Point CMake at the prefix you unpacked into. HDF5 needs both flags, and BLAS/LAPACK are
-usually easier to name outright than to let CMake search for:
-
-```ShellSession
-export DEPS_PREFIX=$HOME/opt/deps
-
-cmake -S alps-src -B alps-build                                       \
-       -DCMAKE_BUILD_TYPE=Release                                     \
-       -DCMAKE_INSTALL_PREFIX=$HOME/opt/alps                          \
-       -DCMAKE_PREFIX_PATH="$DEPS_PREFIX"                             \
-       -DHDF5_ROOT="$DEPS_PREFIX"                                     \
-       -DHDF5_NO_FIND_PACKAGE_CONFIG_FILE=ON                          \
-       -DBLA_VENDOR=OpenBLAS                                          \
-       -DBLAS_LIBRARIES="$DEPS_PREFIX/lib64/libopenblas.so"           \
-       -DLAPACK_LIBRARIES="$DEPS_PREFIX/lib64/libopenblas.so"         \
-       -DCMAKE_CXX_FLAGS="-DBOOST_NO_AUTO_PTR                         \
-       -DBOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF"
-```
-
-> **If your compiler came from a `gcc-toolset`, add the static C++ runtime flags:**
-> ```ShellSession
-> -DCMAKE_SHARED_LINKER_FLAGS="-static-libstdc++ -static-libgcc"      \
-> -DCMAKE_EXE_LINKER_FLAGS="-static-libstdc++ -static-libgcc"         \
-> -DCMAKE_MODULE_LINKER_FLAGS="-static-libstdc++ -static-libgcc"
-> ```
-> A toolset emits code needing a newer `GLIBCXX` than the system `libstdc++.so.6` provides,
-> and the toolset ships no standalone replacement. Without these the build **succeeds** and
-> then nearly every test fails at load with `version 'GLIBCXX_...' not found`.
-
-> **BLAS and LAPACK both point at the one OpenBLAS library** — OpenBLAS bundles LAPACK.
-</details>
-
-<details>
-<summary><strong> From Homebrew and a venv (macOS)</strong> </summary>
-
-Homebrew keeps each formula in its own prefix, so name the ones CMake needs. Apple's Clang
-has no OpenMP runtime, hence `OpenMP_ROOT`:
-
-```ShellSession
-BREW=$(brew --prefix)
-
-cmake -S alps-src -B alps-build                                       \
-       -DCMAKE_INSTALL_PREFIX=$HOME/opt/alps                          \
-       -DCMAKE_PREFIX_PATH="$BREW/opt/openblas;$BREW/opt/hdf5;$BREW/opt/libomp" \
-       -DOpenMP_ROOT="$BREW/opt/libomp"                               \
-       -DHDF5_ROOT="$BREW/opt/hdf5"                                   \
-       -DPython3_EXECUTABLE="$HOME/alps-venv/bin/python"              \
-       -DCMAKE_CXX_FLAGS="-DBOOST_NO_AUTO_PTR                         \
-       -DBOOST_FILESYSTEM_NO_CXX20_ATOMIC_REF"
-```
-
-With a Homebrew GCC instead of Apple Clang, add `-DCMAKE_C_COMPILER=$BREW/bin/gcc-14`,
-`-DCMAKE_CXX_COMPILER=$BREW/bin/g++-14`, drop `-DOpenMP_ROOT`, and set
-`export SDKROOT=$(xcrun --show-sdk-path)` first — see [Build notes](#build-notes).
-</details>
-
-</details>
+> **Dependencies outside the default search path?** If they came from a prefix you own
+> rather than from the package manager, CMake needs to be told where each one is. The
+> flags for every such route — cluster modules, micromamba, unpacked packages, a Homebrew
+> prefix plus a venv — are collected in
+> <a class="alps-download" href="/codes/install/no_root_guide.pdf" data-filename="no_root_guide.pdf" target="_blank" rel="noopener">`no_root_guide.pdf`</a>.
 
 ### Troubleshooting
 
