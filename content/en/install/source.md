@@ -35,52 +35,6 @@ needs; a conda environment also has a known Boost/Python ABI problem — see
 [Common Errors](#common-errors).
 
 
-<details id="assisted-install" class="install-section">
-<summary><strong>Install with agent (optional)</strong></summary>
-
-If you use a command-line coding agent, the files below can drive the whole
-install: they probe your system, ask whether you have root, and pick a route for you.
-The agent is instructed to follow the directions in them. **Note: it is inherently safer to create an environment your agent can work in or to revoke its root access.**
-
-**1. Download the instruction files.**
-<a class="alps-download" href="/codes/install/alps-install-agent.md" data-filename="alps-install-agent.md" target="_blank" rel="noopener">`alps-install-agent.md`</a> is the procedure the agent follows;
-<a class="alps-download" href="/codes/install/no_root_guide.pdf" data-filename="no_root_guide.pdf" target="_blank" rel="noopener">`no_root_guide.pdf`</a> is the per-system reference it uses when you have no root.
-It is convenient to save them to the folder you'll be working in.
-
-**2. Hand them to your agent.** Start the agent in the directory where you saved the files (or provide the paths) and
-give it the files plus your intent:
-
-```ShellSession
-claude "Read alps-install-agent.md and no_root_guide.pdf and install ALPS following them."
-```
-
-The file tells the agent to stop and ask before anything that downloads, builds, or writes
-outside a prefix you have approved, so you stay in control of each step.
-
-**3. What it will do.**
-
-<div class="roman-list">
-
-1. **Ask whether you have `sudo`.** It will not test this by running `sudo` — that can prompt
-   for a password or alert an administrator. If you are unsure, answer no. Consider trying an environment before allowing root access!
-2. **Probe the system** — compiler and Python versions, whether the Python headers are
-   present, HDF5 and MPI, `module avail`, free space in `$HOME`. It checks whether each tool
-   is *usable*, not merely installed.
-3. **Recommend a route** and show you the probe lines that decided it — system packages if you
-   have root, otherwise cluster modules, a package-unpacking prefix, or a `micromamba`
-   environment.
-4. **Configure, build, verify** — ending with a 2-D Ising run whose result it checks. It
-   asks first whether to keep the run in an `ising_results/` directory or just print the
-   numbers, and offers to plot |M| vs T (asking before installing `matplotlib` if you do
-   not have it).
-
-</div>
-
-> **The probe output is worth keeping.** If the build fails and you ask for help, it answers
-> most of the questions anyone would ask you first.
-
-</details>
-
 <details id="deps-linux" class="install-section">
 <summary><strong>Install on Linux</strong></summary>
 
@@ -231,6 +185,51 @@ of `$HDF5_DIR`.
 > interconnect (InfiniBand/UCX). A generic MPI from an environment manager will fall back to
 > TCP and lose most of the network performance, so even when using an environment manager for
 > everything else, keep MPI on the site module.
+</details>
+
+<details id="assisted-install" class="install-section">
+<summary><strong>Install with agent (optional)</strong></summary>
+
+If you use a command-line coding agent, the two files linked here can drive the whole
+install: they probe your system, ask whether you have root, and pick a route for you.
+The agent is instructed to follow the directions in them. **Note: it is inherently safer to create an environment your agent can work in or to revoke its root access.**
+
+**1. Download the instruction files.**
+<a class="alps-download" href="/codes/install/alps-install-agent.md" data-filename="alps-install-agent.md" target="_blank" rel="noopener">`alps-install-agent.md`</a> is the procedure the agent follows;
+<a class="alps-download" href="/codes/install/no_root_guide.pdf" data-filename="no_root_guide.pdf" target="_blank" rel="noopener">`no_root_guide.pdf`</a> is the per-system reference it uses when you have no root.
+It is convenient to save them to the folder you'll be working in.
+
+**2. Hand them to your agent.** Start the agent in the directory where you saved the files (or provide the paths) and
+give it the files plus your intent:
+
+```ShellSession
+claude "Read alps-install-agent.md and no_root_guide.pdf and install ALPS following them."
+```
+
+The file tells the agent to stop and ask before anything that downloads, builds, or writes
+outside a prefix you have approved, so you stay in control of each step.
+
+**3. What it will do.**
+
+<div class="roman-list">
+
+1. **Ask whether you have `sudo`.** It will not test this by running `sudo` — that can prompt
+   for a password or alert an administrator. If you are unsure, answer no. Consider trying an environment before allowing root access!
+2. **Probe the system** — compiler and Python versions, whether the Python headers are
+   present, HDF5 and MPI, `module avail`, free space in `$HOME`. It checks whether each tool
+   is *usable*, not merely installed.
+3. **Recommend a route** and show you the probe lines that decided it — your system's
+   packages if you have root, otherwise one of the local routes in `no_root_guide.pdf`.
+4. **Configure, build, verify** — ending with a 2-D Ising run whose result it checks. It
+   asks first whether to keep the run in an `ising_results/` directory or just print the
+   numbers, and offers to plot |M| vs T (asking before installing `matplotlib` if you do
+   not have it).
+
+</div>
+
+> **The probe output is worth keeping.** If the build fails and you ask for help, it answers
+> most of the questions anyone would ask you first.
+
 </details>
 
 ### Verify Dependencies
