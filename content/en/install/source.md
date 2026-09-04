@@ -7,17 +7,7 @@ cascade:
     type: docs
 ---
 
-For most cases, it is preferred to [install ALPS from Binaries](../binary). However, for more user control and configuration, installing from Sources could be a better approach. 
-
-Two further routes sit alongside the system-package steps below. An
-[agent install](#assisted-install) hands the whole procedure to a command-line coding agent.
-A local install, written up in
-<a class="alps-download" href="/codes/install/no_root_guide.pdf" data-filename="no_root_guide.pdf" target="_blank" rel="noopener">`no_root_guide.pdf`</a>,
-puts every dependency in a prefix you own instead of on the system. Reach for it when a local
-environment is what is breaking the build — the wrong Python or libraries getting picked up,
-as in [Common Errors](#common-errors) — and so that an agent never needs `sudo`. It is a
-manual procedure too; nothing about it requires an agent.
-
+For most cases, it is preferred to [install ALPS from Binaries](../binary). However, for more user control and configuration, installing from Sources could be a better approach. An [agent install](#assisted-install) is below; the <a class="alps-download" href="/codes/install/no_root_guide.pdf" data-filename="no_root_guide.pdf" target="_blank" rel="noopener">`no_root_guide.pdf`</a> it uses also covers a local install without root — for when a local environment breaks the build (see [Common Errors](#common-errors)), or to keep `sudo` away from an agent.
 {{% steps %}}
 
 ### Install Required Dependencies
